@@ -24,57 +24,176 @@ import {
   Eye,
   Check,
   Droplets,
+  Printer,
+  Grid,
+  Bot,
+  Send,
+  Zap,
+  ZoomIn,
+  ZoomOut,
+  RefreshCw,
+  Palette,
+  FileImage,
+  Sun,
+  Layers,
+  Scissors,
 } from 'lucide-react';
 
 const PRESETS = [
   {
     id: 'passport',
-    label: 'Passport',
-    dimensions: '300 × 300',
+    label: 'পাসপোর্ট সাইজ',
+    labelEn: 'Passport Size',
+    dimensions: '300 × 300 px',
     width: 300,
     height: 300,
     targetKB: 100,
-    fitMode: 'cover',
-    keyMode: 'edge',
+    defaultBg: '#FFFFFF',
     icon: UserCheck,
+    hint: 'সকল সরকারি ও আন্তর্জাতিক পাসপোর্টের জন্য প্রমিত',
   },
   {
     id: 'signature',
-    label: 'Signature',
-    dimensions: '300 × 80',
+    label: 'স্বাক্ষর / Signature',
+    labelEn: 'Signature Scan',
+    dimensions: '300 × 80 px',
     width: 300,
     height: 80,
     targetKB: 60,
-    fitMode: 'contain',
-    keyMode: 'paper',
+    defaultBg: 'transparent',
     icon: PenTool,
+    hint: 'সাদা কাগজ মুছে পিউর কালির সিগনেচার তৈরি করে',
   },
   {
     id: 'nid',
-    label: 'NID / Visa',
-    dimensions: '400 × 500',
+    label: 'এনআইডি / ভিসা',
+    labelEn: 'NID / Visa',
+    dimensions: '400 × 500 px',
     width: 400,
     height: 500,
     targetKB: 100,
-    fitMode: 'cover',
-    keyMode: 'edge',
+    defaultBg: '#0088cc',
     icon: UserCheck,
+    hint: 'স্মার্ট এনআইডি, ড্রাইভিং লাইসেন্স ও এম্বাসি ভিসা সাইজ',
+  },
+  {
+    id: 'stamp',
+    label: 'স্ট্যাম্প সাইজ',
+    labelEn: 'Stamp Size',
+    dimensions: '150 × 200 px',
+    width: 150,
+    height: 200,
+    targetKB: 50,
+    defaultBg: '#FFFFFF',
+    icon: ImageIcon,
+    hint: 'অফিসিয়াল ফর্ম, প্রবেশপত্র ও স্টুডেন্ট আইডি সাইজ',
   },
 ];
 
-const BG_OPTIONS = [
-  { id: 'original', label: 'Original', color: null },
-  { id: 'white', label: 'White', color: '#FFFFFF' },
-  { id: 'blue', label: 'Studio Blue', color: '#1D63B8' },
-  { id: 'blur', label: 'BG Blur', color: 'blur' },
+const BG_COLORS = [
+  { id: 'original', label: 'আসল ছবি', labelEn: 'Original', color: null, preview: 'checker' },
+  { id: 'white', label: 'স্টুডিও সাদা', labelEn: 'Studio White', color: '#FFFFFF', preview: '#FFFFFF' },
+  { id: 'sky-blue', label: 'পাসপোর্ট স্কাই ব্লু', labelEn: 'Passport Sky Blue', color: '#0088cc', preview: '#0088cc' },
+  { id: 'navy-blue', label: 'রয়্যাল নেভি', labelEn: 'Royal Navy', color: '#1d4ed8', preview: '#1d4ed8' },
+  { id: 'light-grey', label: 'হালকা ছাই', labelEn: 'Light Grey', color: '#E2E8F0', preview: '#E2E8F0' },
+  { id: 'crimson', label: 'অফিসিয়াল লাল', labelEn: 'Crimson Red', color: '#b91c1c', preview: '#b91c1c' },
+  { id: 'transparent', label: 'স্বচ্ছ (PNG)', labelEn: 'Transparent', color: 'transparent', preview: 'transparent' },
 ];
 
-const EFFECT_PRESETS = [
-  { id: 'natural', label: 'Natural', brightness: 0, contrast: 0, saturation: 0, warmth: 0, sharpness: 0, blur: 0 },
-  { id: 'studio', label: 'Studio Bright', brightness: 10, contrast: 12, saturation: 8, warmth: 4, sharpness: 25, blur: 0 },
-  { id: 'warm', label: 'Warm Glow', brightness: 6, contrast: 8, saturation: 14, warmth: 18, sharpness: 15, blur: 0 },
-  { id: 'bw', label: 'Crisp B&W', brightness: 4, contrast: 20, saturation: -100, warmth: 0, sharpness: 20, blur: 0 },
-  { id: 'scan', label: 'Clean Ink', brightness: 14, contrast: 32, saturation: -20, warmth: 0, sharpness: 35, blur: 0 },
+const RESOLUTION_MODES = [
+  { id: 'standard', label: 'স্ট্যান্ডার্ড ওয়েব (1x)', scale: 1, desc: 'দ্রুত অনলাইন আপলোড ও সাধারণ ফর্মের জন্য' },
+  { id: 'fullhd', label: 'ফুল এইচডি (2x)', scale: 2, desc: 'উচ্চমানের ডিজিটাল ডিসপ্লে ও ক্লিয়ার রেজুলেশন' },
+  { id: 'ultra300', label: 'স্টুডিও 300 DPI (3x)', scale: 3, desc: 'প্রিন্ট ল্যাব ও স্টুডিও কোয়ালিটি সুপার-শার্প প্রিন্টিং' },
+  { id: 'ultra4k', label: 'আল্ট্রা এইচডি 4K (4x)', scale: 4, desc: 'সর্বোচ্চ রেজুলেশন আর্ট পেপার প্রিন্ট' },
+];
+
+const SHEET_LAYOUTS = [
+  { id: '4r-10', label: '১০ কপি (5×2 গ্রিড - 4R পেপার)', count: 10, cols: 5, rows: 2, paper: '4R (4" × 6")', paperWidth: 1800, paperHeight: 1200 },
+  { id: '4r-8', label: '৮ কপি (4×2 গ্রিড - 4R পেপার)', count: 8, cols: 4, rows: 2, paper: '4R (4" × 6")', paperWidth: 1800, paperHeight: 1200 },
+  { id: '4r-6', label: '৬ কপি (3×2 গ্রিড - 4R পেপার)', count: 6, cols: 3, rows: 2, paper: '4R (4" × 6")', paperWidth: 1800, paperHeight: 1200 },
+  { id: 'a4-12', label: '১২ কপি (4×3 গ্রিড - A4 পেপার)', count: 12, cols: 4, rows: 3, paper: 'A4 (8.27" × 11.69")', paperWidth: 2480, paperHeight: 3508 },
+  { id: 'a4-16', label: '১৬ কপি (4×4 গ্রিড - A4 পেপার)', count: 16, cols: 4, rows: 4, paper: 'A4 (8.27" × 11.69")', paperWidth: 2480, paperHeight: 3508 },
+  { id: '4r-stamp-24', label: '২৪ কপি স্ট্যাম্প সাইজ (6×4 গ্রিড)', count: 24, cols: 6, rows: 4, paper: '4R (4" × 6")', paperWidth: 1800, paperHeight: 1200 },
+];
+
+const AI_QUICK_PRESETS = [
+  {
+    title: '✨ AI স্মার্ট পাসপোর্ট মোড',
+    prompt: 'পাসপোর্ট সাইজ ৩০০x৩০০, ব্যাকগ্রাউন্ড সাদা, ফেস ক্ল্যারিটি শার্প এবং ন্যাচারাল লাইটিং',
+    config: {
+      presetId: 'passport',
+      bgChoice: 'white',
+      brightness: 8,
+      contrast: 14,
+      saturation: 4,
+      sharpness: 35,
+      warmth: 4,
+      smoothSkin: true,
+      decontaminate: true,
+      tolerance: 45,
+    },
+    summary: 'ব্যাকগ্রাউন্ড সম্পূর্ণ পিউর হোয়াইট করা হয়েছে, ফেস ক্ল্যারিটি ও শার্পনেস বাড়ানো হয়েছে এবং লাইটিং ব্যালেন্স করা হয়েছে।',
+  },
+  {
+    title: '👔 এক্সিকিউটিভ ব্লু ব্যাকগ্রাউন্ড',
+    prompt: 'রয়্যাল ব্লু ব্যাকগ্রাউন্ড, স্যুট ও কাপড়ের কনট্রাস্ট এনহ্যান্স, প্রফেশনাল পোর্টাল হেডশট',
+    config: {
+      presetId: 'nid',
+      bgChoice: 'navy-blue',
+      brightness: 6,
+      contrast: 18,
+      saturation: 8,
+      sharpness: 25,
+      warmth: 2,
+      smoothSkin: false,
+      decontaminate: true,
+      tolerance: 40,
+    },
+    summary: 'রয়্যাল নেভি ব্লু ব্যাকগ্রাউন্ড সেট করা হয়েছে, স্যুট ও টাইয়ের কনট্রাস্ট নিখুঁত করা হয়েছে।',
+  },
+  {
+    title: '🌟 আল্ট্রা ফেস গ্লো ও বিউটিফাই',
+    prompt: 'মুখের ত্বক মসৃণ ও উজ্জ্বল করো, ব্যাকগ্রাউন্ড ব্লার বা সফট লাইট করো, চোখের স্পষ্টতা বাড়াও',
+    config: {
+      brightness: 12,
+      contrast: 10,
+      saturation: 12,
+      sharpness: 20,
+      warmth: 10,
+      vignette: 15,
+      smoothSkin: true,
+      decontaminate: true,
+    },
+    summary: 'ফেস স্কিন টোন ওয়ার্ম ও স্মুথ করা হয়েছে, মুখের দাগ সফট করে আই ক্ল্যারিটি বাড়ানো হয়েছে।',
+  },
+  {
+    title: '🖊️ পিউর সিগনেচার ক্লিনার',
+    prompt: 'স্বাক্ষরের পেপারের ব্যাকগ্রাউন্ড ১০০% রিমুভ করে গাঢ় কালো কালি করো',
+    config: {
+      presetId: 'signature',
+      bgChoice: 'transparent',
+      brightness: 18,
+      contrast: 45,
+      saturation: -100,
+      sharpness: 40,
+      tolerance: 50,
+      decontaminate: true,
+    },
+    summary: 'কাগজের ছোপ ও ছায়া ১০০% মুছে ফেলা হয়েছে এবং কালির রেখা গভীর কালো করা হয়েছে।',
+  },
+  {
+    title: '🖤 হাই-কনট্রাস্ট মনোক্রোম B&W',
+    prompt: 'ক্লাসিক ব্ল্যাক অ্যান্ড হোয়াইট স্টুডিও পোর্ট্রেট, গভীর শ্যাডো ও পরিষ্কার ডিটেইল',
+    config: {
+      brightness: 5,
+      contrast: 28,
+      saturation: -100,
+      sharpness: 30,
+      warmth: 0,
+      vignette: 25,
+    },
+    summary: 'ছবিটিকে স্টুডিও গ্রেড ব্ল্যাক অ্যান্ড হোয়াইট কনট্রাস্টে রূপান্তর করা হয়েছে।',
+  },
 ];
 
 function formatBytes(bytes) {
@@ -85,1873 +204,1715 @@ function formatBytes(bytes) {
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
-function canvasToBlob(canvas, mimeType, quality) {
-  return new Promise((resolve) => {
-    canvas.toBlob(
-      (blob) => resolve(blob),
-      mimeType,
-      mimeType === 'image/png' ? undefined : quality
-    );
-  });
-}
-
-async function compressToTargetSize(canvas, mimeType, targetBytes) {
-  if (mimeType === 'image/png') {
-    const blob = await canvasToBlob(canvas, mimeType, 1);
-    return { blob, quality: 1 };
-  }
-  const highBlob = await canvasToBlob(canvas, mimeType, 0.95);
-  if (highBlob && highBlob.size <= targetBytes) {
-    return { blob: highBlob, quality: 0.95 };
-  }
-
-  let low = 0.05;
-  let high = 0.94;
-  let bestUnder = null;
-  let bestQuality = 0.05;
-  let smallestBlob = highBlob;
-  let smallestQuality = 0.95;
-
-  for (let i = 0; i < 8; i += 1) {
-    const mid = (low + high) / 2;
-    const blob = await canvasToBlob(canvas, mimeType, mid);
-    if (!blob) break;
-    if (!smallestBlob || blob.size < smallestBlob.size) {
-      smallestBlob = blob;
-      smallestQuality = mid;
-    }
-    if (blob.size <= targetBytes) {
-      bestUnder = blob;
-      bestQuality = mid;
-      low = mid + 0.01;
-    } else {
-      high = mid - 0.01;
-    }
-  }
-  return bestUnder
-    ? { blob: bestUnder, quality: bestQuality }
-    : { blob: smallestBlob, quality: smallestQuality };
-}
-
-/**
- * Computes edge-aware, face-safe background alpha mask + manual brush overrides.
- */
-function applyFaceSafeBackgroundMask(
-  offscreenCanvas,
-  drawRect,
-  { tolerance, mode, deepenInk, protectFace, feather, manualMask }
-) {
-  const w = offscreenCanvas.width;
-  const h = offscreenCanvas.height;
-  const ctx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-  const imgData = ctx.getImageData(0, 0, w, h);
-  const data = imgData.data;
-
-  // Apply paper/ink keying for signatures
-  if (mode === 'paper') {
-    const threshold = 255 - tolerance * 2.1;
-    const featherRange = 28;
-    for (let p = 0; p < w * h; p += 1) {
-      const i = p * 4;
-      const override = manualMask && manualMask.length === w * h ? manualMask[p] : 0;
-      if (override === 1) continue;
-      if (override === 2) {
-        data[i + 3] = 0;
-        continue;
-      }
-
-      const a = data[i + 3];
-      if (a === 0) continue;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-      const saturation = Math.max(r, g, b) - Math.min(r, g, b);
-
-      if (tolerance > 0 && luma >= threshold && saturation < 55) {
-        data[i + 3] = 0;
-      } else if (tolerance > 0 && luma >= threshold - featherRange && saturation < 55) {
-        const ratio = (threshold - luma) / featherRange;
-        data[i + 3] = Math.round(a * Math.max(0, Math.min(1, ratio)));
-      } else if (deepenInk && luma < 175) {
-        data[i] = Math.max(0, Math.round(r * 0.55));
-        data[i + 1] = Math.max(0, Math.round(g * 0.55));
-        data[i + 2] = Math.max(0, Math.round(b * 0.55));
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-    return;
-  }
-
-  // Portrait mode: edge-contrast barrier + inner face safe-zone + BFS flood fill
-  if (tolerance > 0) {
-    const x0 = Math.max(0, Math.floor(drawRect.x));
-    const y0 = Math.max(0, Math.floor(drawRect.y));
-    const x1 = Math.min(w - 1, Math.ceil(drawRect.x + drawRect.w) - 1);
-    const y1 = Math.min(h - 1, Math.ceil(drawRect.y + drawRect.h) - 1);
-
-    if (x1 >= x0 && y1 >= y0) {
-      const sampleCoords = [
-        [x0, y0],
-        [x1, y0],
-        [Math.floor((x0 + x1) / 2), y0],
-        [x0, Math.floor((y0 + y1) * 0.35)],
-        [x1, Math.floor((y0 + y1) * 0.35)],
-      ];
-      let sumR = 0;
-      let sumG = 0;
-      let sumB = 0;
-      let sampleCount = 0;
-      for (const [sx, sy] of sampleCoords) {
-        const idx = (sy * w + sx) * 4;
-        if (data[idx + 3] > 20) {
-          sumR += data[idx];
-          sumG += data[idx + 1];
-          sumB += data[idx + 2];
-          sampleCount += 1;
-        }
-      }
-
-      if (sampleCount > 0) {
-        const refR = sumR / sampleCount;
-        const refG = sumG / sampleCount;
-        const refB = sumB / sampleCount;
-        const maxDist = tolerance * 2.15;
-        const maxDistSq = maxDist * maxDist;
-
-        // Precompute lightweight edge magnitude to stop bleeding across chin/hair
-        const lumaArr = new Float32Array(w * h);
-        for (let p = 0; p < w * h; p += 1) {
-          const i = p * 4;
-          lumaArr[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        }
-
-        const faceCx = w * 0.5;
-        const faceCy = h * 0.44;
-        const faceRx = w * 0.23;
-        const faceRy = h * 0.30;
-        const edgeStopThreshold = Math.max(22, 48 - tolerance * 0.28);
-
-        const visited = new Uint8Array(w * h);
-        const queue = new Int32Array(w * h);
-        let head = 0;
-        let tail = 0;
-
-        const isSkinTone = (r, g, b) =>
-          r > 85 &&
-          g > 45 &&
-          b > 25 &&
-          r > g &&
-          r > b &&
-          Math.abs(r - g) > 12 &&
-          r - b > 20;
-
-        const tryEnqueue = (px, py, prevLuma) => {
-          if (px < x0 || px > x1 || py < y0 || py > y1) return;
-          const pIdx = py * w + px;
-          if (visited[pIdx]) return;
-
-          const override = manualMask && manualMask.length === w * h ? manualMask[pIdx] : 0;
-          if (override === 1) return;
-
-          // Center portrait safe-zone protects face & skin from accidental flood bleed
-          if (protectFace) {
-            const nx = (px - faceCx) / faceRx;
-            const ny = (py - faceCy) / faceRy;
-            if (nx * nx + ny * ny <= 1.0) return;
-          }
-
-          const dIdx = pIdx * 4;
-          if (data[dIdx + 3] === 0) {
-            visited[pIdx] = 1;
-            queue[tail++] = pIdx;
-            return;
-          }
-
-          // Edge barrier check against strong hair/jawline contrast
-          const curLuma = lumaArr[pIdx];
-          if (prevLuma !== null && Math.abs(curLuma - prevLuma) > edgeStopThreshold) {
-            return;
-          }
-
-          const r = data[dIdx];
-          const g = data[dIdx + 1];
-          const b = data[dIdx + 2];
-          if (protectFace && isSkinTone(r, g, b) && py > h * 0.18 && px > w * 0.22 && px < w * 0.78) {
-            return;
-          }
-
-          const dr = r - refR;
-          const dg = g - refG;
-          const db = b - refB;
-          if (dr * dr + dg * dg + db * db <= maxDistSq) {
-            visited[pIdx] = 1;
-            queue[tail++] = pIdx;
-          }
-        };
-
-        for (let x = x0; x <= x1; x += 1) {
-          tryEnqueue(x, y0, null);
-        }
-        for (let y = y0; y <= y1; y += 1) {
-          tryEnqueue(x0, y, null);
-          tryEnqueue(x1, y, null);
-        }
-
-        const featherBand = Math.max(0.12, Math.min(0.45, feather * 0.04));
-        while (head < tail) {
-          const pIdx = queue[head++];
-          const px = pIdx % w;
-          const py = (pIdx - px) / w;
-          const dIdx = pIdx * 4;
-
-          const dr = data[dIdx] - refR;
-          const dg = data[dIdx + 1] - refG;
-          const db = data[dIdx + 2] - refB;
-          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-          const solidCutoff = maxDist * (1 - featherBand);
-
-          if (dist <= solidCutoff) {
-            data[dIdx + 3] = 0;
-          } else {
-            const ratio = (dist - solidCutoff) / Math.max(1, maxDist - solidCutoff);
-            data[dIdx + 3] = Math.round(data[dIdx + 3] * Math.min(1, Math.max(0, ratio)));
-          }
-
-          const curLuma = lumaArr[pIdx];
-          tryEnqueue(px + 1, py, curLuma);
-          tryEnqueue(px - 1, py, curLuma);
-          tryEnqueue(px, py + 1, curLuma);
-          tryEnqueue(px, py - 1, curLuma);
-        }
-      }
-    }
-  }
-
-  // Apply manual brush overrides cleanly on top of auto segmentation
-  if (manualMask && manualMask.length === w * h) {
-    for (let p = 0; p < w * h; p += 1) {
-      if (manualMask[p] === 2) {
-        data[p * 4 + 3] = 0;
-      }
-    }
-  }
-
-  ctx.putImageData(imgData, 0, 0);
-}
-
-/**
- * Applies pixel warmth & unsharp-mask clarity on a canvas.
- */
-function applyPixelEnhance(canvas, { warmth, sharpness }) {
-  if (warmth === 0 && sharpness === 0) return;
-  const w = canvas.width;
-  const h = canvas.height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const imgData = ctx.getImageData(0, 0, w, h);
-  const data = imgData.data;
-
-  if (warmth !== 0) {
-    const rShift = warmth * 1.1;
-    const bShift = -warmth * 1.1;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] === 0) continue;
-      data[i] = Math.min(255, Math.max(0, data[i] + rShift));
-      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + bShift));
-    }
-  }
-
-  if (sharpness > 0) {
-    const src = new Uint8ClampedArray(data);
-    const amount = (sharpness / 100) * 0.75;
-    for (let y = 1; y < h - 1; y += 1) {
-      for (let x = 1; x < w - 1; x += 1) {
-        const idx = (y * w + x) * 4;
-        if (src[idx + 3] === 0) continue;
-        for (let c = 0; c < 3; c += 1) {
-          const center = src[idx + c];
-          const avgNeighbors =
-            (src[((y - 1) * w + x) * 4 + c] +
-              src[((y + 1) * w + x) * 4 + c] +
-              src[(y * w + x - 1) * 4 + c] +
-              src[(y * w + x + 1) * 4 + c]) *
-            0.25;
-          const sharpened = center + (center - avgNeighbors) * (amount * 2.2);
-          data[idx + c] = Math.min(255, Math.max(0, sharpened));
-        }
-      }
-    }
-  }
-
-  ctx.putImageData(imgData, 0, 0);
-}
-
-function createOfflineSampleDataUrl(type) {
-  const c = document.createElement('canvas');
-  if (type === 'signature') {
-    c.width = 600;
-    c.height = 160;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#E8ECEF';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.strokeStyle = '#0F172A';
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(75, 110);
-    ctx.bezierCurveTo(100, 25, 145, 25, 130, 110);
-    ctx.bezierCurveTo(120, 130, 170, 60, 195, 95);
-    ctx.bezierCurveTo(215, 120, 235, 50, 270, 90);
-    ctx.bezierCurveTo(295, 120, 340, 45, 385, 88);
-    ctx.bezierCurveTo(420, 115, 470, 65, 520, 82);
-    ctx.stroke();
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(90, 132);
-    ctx.quadraticCurveTo(290, 120, 495, 130);
-    ctx.stroke();
-    return c.toDataURL('image/png');
-  }
-
-  c.width = 600;
-  c.height = 600;
-  const ctx = c.getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 600);
-  grad.addColorStop(0, '#DFE6EE');
-  grad.addColorStop(1, '#C8D3E0');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 600, 600);
-
-  ctx.fillStyle = '#1E293B';
-  ctx.beginPath();
-  ctx.moveTo(110, 600);
-  ctx.quadraticCurveTo(140, 415, 300, 415);
-  ctx.quadraticCurveTo(460, 415, 490, 600);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#F8FAFC';
-  ctx.beginPath();
-  ctx.moveTo(245, 415);
-  ctx.lineTo(300, 520);
-  ctx.lineTo(355, 415);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#E6B89C';
-  ctx.fillRect(264, 345, 72, 90);
-
-  ctx.fillStyle = '#F1C7AD';
-  ctx.beginPath();
-  ctx.ellipse(300, 248, 86, 108, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#0F172A';
-  ctx.beginPath();
-  ctx.ellipse(300, 168, 90, 56, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#0F172A';
-  ctx.beginPath();
-  ctx.arc(268, 245, 7, 0, Math.PI * 2);
-  ctx.arc(332, 245, 7, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = '#9A5B47';
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.arc(300, 286, 24, 0.15 * Math.PI, 0.85 * Math.PI);
-  ctx.stroke();
-
-  return c.toDataURL('image/png');
-}
-
 export default function PhotoStudio() {
   const [sourceImage, setSourceImage] = useState(null);
-  const [sourceMeta, setSourceMeta] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [inspectorTab, setInspectorTab] = useState('size');
+  const [sourceFileName, setSourceFileName] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Dimensions & Preset State
+  // Active Preset & Dimensions
   const [activePreset, setActivePreset] = useState('passport');
   const [outputWidth, setOutputWidth] = useState(300);
   const [outputHeight, setOutputHeight] = useState(300);
   const [aspectLocked, setAspectLocked] = useState(true);
-  const [lockedRatio, setLockedRatio] = useState(1);
 
-  // Transform & Interactive Crop Box (normalized 0..1)
-  const [cropMode, setCropMode] = useState(false);
-  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 1, h: 1 });
-  const [lockCropToOutput, setLockCropToOutput] = useState(true);
-  const [rotationDeg, setRotationDeg] = useState(0);
-  const [straightenDeg, setStraightenDeg] = useState(0);
-  const [flipH, setFlipH] = useState(false);
-  const [fitMode, setFitMode] = useState('cover');
-  const [zoom, setZoom] = useState(1);
-  const [offsetX, setOffsetX] = useState(0);
-  const [offsetY, setOffsetY] = useState(0);
+  // Background Settings
+  const [bgChoice, setBgChoice] = useState('white');
+  const [customBgColor, setCustomBgColor] = useState('#FFFFFF');
+  const [tolerance, setTolerance] = useState(42);
+  const [feather, setFeather] = useState(4);
+  const [decontaminateSpill, setDecontaminateSpill] = useState(true);
 
-  // Background Color, Blur & Face Protection
-  const [bgMode, setBgMode] = useState('original');
-  const [customBgColor, setCustomBgColor] = useState('#E0F2FE');
-  const [bgTolerance, setBgTolerance] = useState(28);
-  const [bgBlurAmount, setBgBlurAmount] = useState(10);
-  const [featherAmount, setFeatherAmount] = useState(4);
-  const [protectFace, setProtectFace] = useState(true);
-  const [keyMode, setKeyMode] = useState('edge');
-  const [deepenInk, setDeepenInk] = useState(false);
+  // Interactive Brush Touch-Up (Photoshop style)
+  const [brushMode, setBrushMode] = useState('none'); // 'none', 'erase', 'restore'
+  const [brushSize, setBrushSize] = useState(25);
+  const [brushSoftness, setBrushSoftness] = useState(50);
+  const [manualMask, setManualMask] = useState(null); // Uint8Array: 0 = auto, 1 = keep/restore, 2 = erase/remove
+  const [isPainting, setIsPainting] = useState(false);
 
-  // Manual Touch-up Brush
-  const [brushMode, setBrushMode] = useState('none'); // 'none' | 'keep' | 'erase'
-  const [brushSize, setBrushSize] = useState(18);
-  const [maskVersion, setMaskVersion] = useState(0);
-  const manualMaskRef = useRef(null);
-  const isPaintingRef = useRef(false);
-  const dragPanRef = useRef(null);
-
-  // Effects, Enhance & Blur
-  const [activeEffect, setActiveEffect] = useState('natural');
+  // Photoshop-Level Adjustments
   const [brightness, setBrightness] = useState(0);
   const [contrast, setContrast] = useState(0);
   const [saturation, setSaturation] = useState(0);
   const [warmth, setWarmth] = useState(0);
   const [sharpness, setSharpness] = useState(0);
-  const [overallBlur, setOverallBlur] = useState(0);
+  const [vignette, setVignette] = useState(0);
+  const [exposure, setExposure] = useState(0);
+  const [blurBg, setBlurBg] = useState(0);
 
-  // Compression & Output
-  const [targetKB, setTargetKB] = useState(100);
-  const [outputFormat, setOutputFormat] = useState('image/jpeg');
-  const [showOriginalCompare, setShowOriginalCompare] = useState(false);
-  const [compressionStats, setCompressionStats] = useState({
-    blob: null,
-    sizeBytes: 0,
-    quality: 0.95,
-    isCompressing: false,
-  });
+  // Transform / Crop
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const [flipH, setFlipH] = useState(false);
+  const [flipV, setFlipV] = useState(false);
+  const [straighten, setStraighten] = useState(0);
 
-  const fileInputRef = useRef(null);
+  // Resolution & Quality
+  const [resolutionMode, setResolutionMode] = useState('standard');
+  const [customDpiScale, setCustomDpiScale] = useState(1);
+  const [targetMaxKB, setTargetMaxKB] = useState(100);
+  const [enforceMaxKB, setEnforceMaxKB] = useState(true);
+  const [exportFormat, setExportFormat] = useState('image/jpeg');
+
+  // Multi-Print Grid Sheet (10-in-1 Passport Sheet)
+  const [showSheetModal, setShowSheetModal] = useState(false);
+  const [selectedSheetLayout, setSelectedSheetLayout] = useState('4r-10');
+  const [showCutGuides, setShowCutGuides] = useState(true);
+  const [sheetSpacing, setSheetSpacing] = useState(16);
+  const [sheetMargin, setSheetMargin] = useState(40);
+  const [sheetPreviewUrl, setSheetPreviewUrl] = useState(null);
+  const [isGeneratingSheet, setIsGeneratingSheet] = useState(false);
+
+  // AI Prompt Assistant Modal
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiExecutionStatus, setAiExecutionStatus] = useState(null);
+
+  // Live Stats & Hold to Original
+  const [isComparing, setIsComparing] = useState(false);
+  const [liveFileSize, setLiveFileSize] = useState(0);
+  const [activeTab, setActiveTab] = useState('crop'); // 'crop', 'bg', 'adjust', 'ai', 'print'
+
+  // Canvas Refs
   const previewCanvasRef = useRef(null);
-  const cropStageRef = useRef(null);
-  const cropDragRef = useRef(null);
-  const renderJobRef = useRef(0);
+  const hiddenWorkCanvasRef = useRef(null);
+  const sheetCanvasRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
-  const resetMask = useCallback(() => {
-    manualMaskRef.current = null;
-    setMaskVersion((v) => v + 1);
+  // Default sample photo loader on mount
+  useEffect(() => {
+    loadSamplePhoto();
   }, []);
 
-  const loadImageFromUrl = useCallback(
-    (url, meta) => {
+  const loadSamplePhoto = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 700;
+    const ctx = canvas.getContext('2d');
+
+    // Studio Backdrop gradient
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 700);
+    bgGrad.addColorStop(0, '#CBD5E1');
+    bgGrad.addColorStop(1, '#94A3B8');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 600, 700);
+
+    // Suit shoulders
+    ctx.fillStyle = '#0F172A';
+    ctx.beginPath();
+    ctx.moveTo(110, 700);
+    ctx.quadraticCurveTo(150, 480, 300, 480);
+    ctx.quadraticCurveTo(450, 480, 490, 700);
+    ctx.closePath();
+    ctx.fill();
+
+    // White shirt collar
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.moveTo(250, 480);
+    ctx.lineTo(300, 580);
+    ctx.lineTo(350, 480);
+    ctx.closePath();
+    ctx.fill();
+
+    // Red/Blue tie
+    ctx.fillStyle = '#1D4ED8';
+    ctx.beginPath();
+    ctx.moveTo(285, 520);
+    ctx.lineTo(315, 520);
+    ctx.lineTo(310, 680);
+    ctx.lineTo(300, 700);
+    ctx.lineTo(290, 680);
+    ctx.closePath();
+    ctx.fill();
+
+    // Neck
+    ctx.fillStyle = '#E5C29F';
+    ctx.fillRect(265, 390, 70, 110);
+
+    // Face oval
+    ctx.fillStyle = '#F4D4B8';
+    ctx.beginPath();
+    ctx.ellipse(300, 300, 95, 120, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hair
+    ctx.fillStyle = '#1E293B';
+    ctx.beginPath();
+    ctx.ellipse(300, 205, 105, 55, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Eyes
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.arc(265, 290, 7, 0, Math.PI * 2);
+    ctx.arc(335, 290, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Smile
+    ctx.strokeStyle = '#9A3412';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(300, 345, 28, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    const img = new Image();
+    img.src = canvas.toDataURL('image/jpeg', 0.95);
+    img.onload = () => {
+      setSourceImage(img);
+      setSourceFileName('Studio_Demo_Portrait.jpg');
+      setManualMask(new Uint8Array(300 * 300));
+    };
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSourceFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         setSourceImage(img);
-        setSourceMeta({
-          ...meta,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
-        });
-        setCropBox({ x: 0, y: 0, w: 1, h: 1 });
-        setRotationDeg(0);
-        setStraightenDeg(0);
-        setFlipH(false);
+        setPanX(0);
+        setPanY(0);
         setZoom(1);
-        setOffsetX(0);
-        setOffsetY(0);
-        setCropMode(false);
-        resetMask();
+        setRotationAngle(0);
+        setStraighten(0);
+        setManualMask(new Uint8Array(outputWidth * outputHeight));
       };
-      img.src = url;
-    },
-    [resetMask]
-  );
+      img.src = event.target?.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
-  const handleFile = useCallback(
-    (file) => {
-      if (!file || !file.type.startsWith('image/')) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        loadImageFromUrl(ev.target.result, {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-        });
-      };
-      reader.readAsDataURL(file);
-    },
-    [loadImageFromUrl]
-  );
-
-  const applyPreset = (preset) => {
+  const handlePresetSelect = (preset) => {
     setActivePreset(preset.id);
     setOutputWidth(preset.width);
     setOutputHeight(preset.height);
-    setLockedRatio(preset.width / preset.height);
-    setAspectLocked(true);
-    setTargetKB(preset.targetKB);
-    setFitMode(preset.fitMode);
-    setKeyMode(preset.keyMode);
-    setDeepenInk(preset.id === 'signature');
-    setProtectFace(preset.keyMode === 'edge');
-    setZoom(1);
-    setOffsetX(0);
-    setOffsetY(0);
-    resetMask();
-    if (preset.id === 'signature') {
-      setBgMode('white');
-      setBgTolerance(34);
+    setTargetMaxKB(preset.targetKB);
+    if (preset.defaultBg) {
+      if (preset.defaultBg === 'transparent') {
+        setBgChoice('transparent');
+      } else {
+        setBgChoice(preset.defaultBg === '#FFFFFF' ? 'white' : 'sky-blue');
+      }
     }
+    setManualMask(new Uint8Array(preset.width * preset.height));
   };
 
-  const handleLoadSample = (type) => {
-    const dataUrl = createOfflineSampleDataUrl(type);
-    if (type === 'signature') {
-      applyPreset(PRESETS[1]);
-      loadImageFromUrl(dataUrl, {
-        name: 'sample-signature.png',
-        size: 18400,
-        type: 'image/png',
-      });
-    } else {
-      applyPreset(PRESETS[0]);
-      setBgMode('blue');
-      setBgTolerance(28);
-      loadImageFromUrl(dataUrl, {
-        name: 'sample-portrait.png',
-        size: 64200,
-        type: 'image/png',
-      });
-    }
-  };
+  // Main Canvas Rendering Engine
+  const renderStudioCanvas = useCallback(
+    (scaleFactor = 1, forExport = false) => {
+      if (!sourceImage) return null;
 
-  const handleWidthChange = (rawVal) => {
-    const nextW = Math.max(10, Math.min(4000, Number(rawVal) || 10));
-    setActivePreset('custom');
-    setOutputWidth(nextW);
-    if (aspectLocked && lockedRatio > 0) {
-      setOutputHeight(Math.max(10, Math.round(nextW / lockedRatio)));
-    }
-    resetMask();
-  };
+      const targetW = Math.round(outputWidth * scaleFactor);
+      const targetH = Math.round(outputHeight * scaleFactor);
 
-  const handleHeightChange = (rawVal) => {
-    const nextH = Math.max(10, Math.min(4000, Number(rawVal) || 10));
-    setActivePreset('custom');
-    setOutputHeight(nextH);
-    if (aspectLocked && lockedRatio > 0) {
-      setOutputWidth(Math.max(10, Math.round(nextH * lockedRatio)));
-    }
-    resetMask();
-  };
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-  const toggleAspectLock = () => {
-    if (!aspectLocked && outputHeight > 0) {
-      setLockedRatio(outputWidth / outputHeight);
-    }
-    setAspectLocked((prev) => !prev);
-  };
-
-  const handleBgSelect = (id) => {
-    setBgMode(id);
-    if (id === 'original') {
-      setBgTolerance(0);
-    } else if (bgTolerance === 0) {
-      setBgTolerance(28);
-    }
-  };
-
-  const applyEffectPreset = (preset) => {
-    setActiveEffect(preset.id);
-    setBrightness(preset.brightness);
-    setContrast(preset.contrast);
-    setSaturation(preset.saturation);
-    setWarmth(preset.warmth);
-    setSharpness(preset.sharpness);
-    setOverallBlur(preset.blur);
-  };
-
-  const handleAutoEnhance = () => {
-    if (!sourceImage) return;
-    // Sample miniature version of source image to auto-balance brightness & contrast
-    const sampleC = document.createElement('canvas');
-    sampleC.width = 64;
-    sampleC.height = 64;
-    const sCtx = sampleC.getContext('2d');
-    sCtx.drawImage(sourceImage, 0, 0, 64, 64);
-    const px = sCtx.getImageData(0, 0, 64, 64).data;
-    let sumL = 0;
-    let minL = 255;
-    let maxL = 0;
-    for (let i = 0; i < px.length; i += 4) {
-      const l = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
-      sumL += l;
-      if (l < minL) minL = l;
-      if (l > maxL) maxL = l;
-    }
-    const meanL = sumL / (64 * 64);
-    const targetBright = Math.round(Math.max(-18, Math.min(24, (132 - meanL) * 0.45)));
-    const spread = maxL - minL;
-    const targetContrast = spread < 190 ? Math.round(Math.min(26, (210 - spread) * 0.22)) : 8;
-
-    setActiveEffect('auto');
-    setBrightness(targetBright);
-    setContrast(targetContrast);
-    setSaturation(10);
-    setWarmth(4);
-    setSharpness(22);
-    setOverallBlur(0);
-  };
-
-  const resolvedBgColor =
-    bgMode === 'white'
-      ? '#FFFFFF'
-      : bgMode === 'blue'
-      ? '#1D63B8'
-      : bgMode === 'custom'
-      ? customBgColor
-      : null;
-
-  // Build transformed + cropped source bitmap onto an offscreen canvas
-  const buildCroppedSourceCanvas = useCallback(() => {
-    if (!sourceImage) return null;
-    const sw = sourceImage.naturalWidth;
-    const sh = sourceImage.naturalHeight;
-    const totalDeg = rotationDeg + straightenDeg;
-    const rad = (totalDeg * Math.PI) / 180;
-
-    // Step 1: Rotate & Flip full source image
-    const swapDims = Math.abs(rotationDeg % 180) === 90;
-    const rotW = swapDims ? sh : sw;
-    const rotH = swapDims ? sw : sh;
-    const rotCanvas = document.createElement('canvas');
-    rotCanvas.width = rotW;
-    rotCanvas.height = rotH;
-    const rotCtx = rotCanvas.getContext('2d');
-    rotCtx.translate(rotW / 2, rotH / 2);
-    rotCtx.rotate(rad);
-    rotCtx.scale(flipH ? -1 : 1, 1);
-    rotCtx.drawImage(sourceImage, -sw / 2, -sh / 2);
-
-    // Step 2: Slice normalized cropBox
-    const sx = Math.max(0, Math.round(cropBox.x * rotW));
-    const sy = Math.max(0, Math.round(cropBox.y * rotH));
-    const cw = Math.max(10, Math.min(rotW - sx, Math.round(cropBox.w * rotW)));
-    const ch = Math.max(10, Math.min(rotH - sy, Math.round(cropBox.h * rotH)));
-
-    const croppedCanvas = document.createElement('canvas');
-    croppedCanvas.width = cw;
-    croppedCanvas.height = ch;
-    const cCtx = croppedCanvas.getContext('2d');
-    cCtx.drawImage(rotCanvas, sx, sy, cw, ch, 0, 0, cw, ch);
-    return croppedCanvas;
-  }, [sourceImage, rotationDeg, straightenDeg, flipH, cropBox]);
-
-  // Main Render & Target-Size Compression Effect
-  useEffect(() => {
-    if (!sourceImage || cropMode || !previewCanvasRef.current) return;
-
-    const jobId = ++renderJobRef.current;
-    const w = Math.max(10, outputWidth);
-    const h = Math.max(10, outputHeight);
-
-    const timer = setTimeout(async () => {
-      const canvas = previewCanvasRef.current;
-      if (!canvas) return;
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-
-      const cropped = buildCroppedSourceCanvas();
-      if (!cropped) return;
-
-      const baseScale =
-        fitMode === 'cover'
-          ? Math.max(w / cropped.width, h / cropped.height)
-          : Math.min(w / cropped.width, h / cropped.height);
-      const scale = baseScale * zoom;
-      const drawW = cropped.width * scale;
-      const drawH = cropped.height * scale;
-      const drawX = (w - drawW) / 2 + (offsetX / 100) * (w * 0.5);
-      const drawY = (h - drawH) / 2 + (offsetY / 100) * (h * 0.5);
-
-      if (showOriginalCompare) {
+      // If comparing original, just render clean cropped original image
+      if (isComparing && !forExport) {
         ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(cropped, drawX, drawY, drawW, drawH);
-        return;
+        ctx.fillRect(0, 0, targetW, targetH);
+        drawSourceCentered(ctx, sourceImage, targetW, targetH, zoom, panX, panY, rotationAngle + straighten, flipH, flipV);
+        return canvas;
       }
 
-      // Build offscreen enhanced subject canvas
+      // 1. Draw Target Background
+      let activeBg = bgChoice === 'custom' ? customBgColor : BG_COLORS.find((c) => c.id === bgChoice)?.color;
+      if (activeBg && activeBg !== 'transparent') {
+        ctx.fillStyle = activeBg;
+        ctx.fillRect(0, 0, targetW, targetH);
+      } else if (activeBg === 'transparent') {
+        ctx.clearRect(0, 0, targetW, targetH);
+      }
+
+      // 2. Draw Source Image into offscreen buffer for Segmentation & Effects
       const offscreen = document.createElement('canvas');
-      offscreen.width = w;
-      offscreen.height = h;
-      const offCtx = offscreen.getContext('2d');
-      offCtx.imageSmoothingEnabled = true;
-      offCtx.imageSmoothingQuality = 'high';
+      offscreen.width = targetW;
+      offscreen.height = targetH;
+      const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
 
-      const filterParts = [
-        `brightness(${100 + brightness}%)`,
-        `contrast(${100 + contrast}%)`,
-        `saturate(${100 + saturation}%)`,
-        overallBlur > 0 ? `blur(${overallBlur}px)` : '',
-      ].filter(Boolean);
-      offCtx.filter = filterParts.join(' ');
-      offCtx.drawImage(cropped, drawX, drawY, drawW, drawH);
-      offCtx.filter = 'none';
+      drawSourceCentered(offCtx, sourceImage, targetW, targetH, zoom, panX, panY, rotationAngle + straighten, flipH, flipV);
 
-      applyPixelEnhance(offscreen, { warmth, sharpness });
+      // 3. Pro-Grade Adaptive Segmentation & Keying (if background is replaced)
+      if (bgChoice !== 'original') {
+        const imgData = offCtx.getImageData(0, 0, targetW, targetH);
+        const data = imgData.data;
 
-      // Composite background layer (Solid / Portrait Bokeh Blur / Original)
-      ctx.clearRect(0, 0, w, h);
-      if (bgMode === 'blur') {
-        // Draw blurred background behind sharp foreground cutout
-        ctx.save();
-        ctx.filter = `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%) blur(${bgBlurAmount}px)`;
-        ctx.drawImage(cropped, drawX - 10, drawY - 10, drawW + 20, drawH + 20);
-        ctx.restore();
-      } else if (resolvedBgColor) {
-        ctx.fillStyle = resolvedBgColor;
-        ctx.fillRect(0, 0, w, h);
-      } else if (outputFormat === 'image/jpeg') {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, w, h);
-      }
+        // Sample background reference colors from boundary edges
+        const cornerPoints = [
+          [2, 2],
+          [targetW - 3, 2],
+          [2, Math.floor(targetH * 0.35)],
+          [targetW - 3, Math.floor(targetH * 0.35)],
+          [Math.floor(targetW / 2), 2],
+        ];
 
-      if (bgMode !== 'original') {
-        applyFaceSafeBackgroundMask(
-          offscreen,
-          { x: drawX, y: drawY, w: drawW, h: drawH },
-          {
-            tolerance: bgTolerance,
-            mode: keyMode,
-            deepenInk,
-            protectFace,
-            feather: featherAmount,
-            manualMask: manualMaskRef.current,
+        let refR = 0;
+        let refG = 0;
+        let refB = 0;
+        let validSamples = 0;
+
+        for (const [sx, sy] of cornerPoints) {
+          const idx = (sy * targetW + sx) * 4;
+          if (data[idx + 3] > 100) {
+            refR += data[idx];
+            refG += data[idx + 1];
+            refB += data[idx + 2];
+            validSamples++;
           }
-        );
+        }
+
+        if (validSamples > 0) {
+          refR /= validSamples;
+          refG /= validSamples;
+          refB /= validSamples;
+        }
+
+        const maxColorDist = tolerance * 2.3;
+        const featherPixels = Math.max(1, feather * scaleFactor);
+
+        // Calculate mask with color difference and smooth alpha falloff
+        for (let y = 0; y < targetH; y++) {
+          for (let x = 0; x < targetW; x++) {
+            const p = y * targetW + x;
+            const idx = p * 4;
+
+            // Check manual brush override (mapped from standard coordinate)
+            if (manualMask) {
+              const origX = Math.min(outputWidth - 1, Math.floor(x / scaleFactor));
+              const origY = Math.min(outputHeight - 1, Math.floor(y / scaleFactor));
+              const mIdx = origY * outputWidth + origX;
+              const override = manualMask[mIdx];
+
+              if (override === 1) {
+                // Restore subject
+                continue;
+              } else if (override === 2) {
+                // Erase background
+                data[idx + 3] = 0;
+                continue;
+              }
+            }
+
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+
+            // Color distance
+            const dr = r - refR;
+            const dg = g - refG;
+            const db = b - refB;
+            const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+            if (dist < maxColorDist) {
+              if (dist <= maxColorDist - featherPixels) {
+                data[idx + 3] = 0; // Completely transparent
+              } else {
+                // Smooth feathering
+                const alphaRatio = (dist - (maxColorDist - featherPixels)) / featherPixels;
+                data[idx + 3] = Math.round(data[idx + 3] * Math.min(1, Math.max(0, alphaRatio)));
+
+                // Decontaminate edge spill (remove residual background tint)
+                if (decontaminateSpill && activeBg && activeBg !== 'transparent') {
+                  data[idx] = Math.round(r * 0.7 + refR * 0.3);
+                  data[idx + 1] = Math.round(g * 0.7 + refG * 0.3);
+                  data[idx + 2] = Math.round(b * 0.7 + refB * 0.3);
+                }
+              }
+            }
+          }
+        }
+
+        offCtx.putImageData(imgData, 0, 0);
       }
 
+      // 4. Draw Segmented Subject on Top of New Background
       ctx.drawImage(offscreen, 0, 0);
 
-      setCompressionStats((prev) => ({ ...prev, isCompressing: true }));
-      const targetBytes = Math.max(5, Number(targetKB) || 100) * 1024;
-      const result = await compressToTargetSize(canvas, outputFormat, targetBytes);
-
-      if (jobId !== renderJobRef.current) return;
-
-      setCompressionStats({
-        blob: result.blob,
-        sizeBytes: result.blob ? result.blob.size : 0,
-        quality: result.quality,
-        isCompressing: false,
+      // 5. Apply Photoshop-grade Adjustments (Brightness, Contrast, Warmth, Sharpness)
+      applyCanvasFilters(ctx, targetW, targetH, {
+        brightness,
+        contrast,
+        saturation,
+        warmth,
+        sharpness,
+        vignette,
+        exposure,
       });
-    }, 65);
 
-    return () => clearTimeout(timer);
-  }, [
-    sourceImage,
-    cropMode,
-    outputWidth,
-    outputHeight,
-    fitMode,
-    zoom,
-    offsetX,
-    offsetY,
-    bgMode,
-    resolvedBgColor,
-    bgTolerance,
-    bgBlurAmount,
-    featherAmount,
-    protectFace,
-    keyMode,
-    deepenInk,
-    brightness,
-    contrast,
-    saturation,
-    warmth,
-    sharpness,
-    overallBlur,
-    targetKB,
-    outputFormat,
-    showOriginalCompare,
-    maskVersion,
-    buildCroppedSourceCanvas,
-  ]);
+      return canvas;
+    },
+    [
+      sourceImage,
+      outputWidth,
+      outputHeight,
+      zoom,
+      panX,
+      panY,
+      rotationAngle,
+      straighten,
+      flipH,
+      flipV,
+      bgChoice,
+      customBgColor,
+      tolerance,
+      feather,
+      decontaminateSpill,
+      manualMask,
+      brightness,
+      contrast,
+      saturation,
+      warmth,
+      sharpness,
+      vignette,
+      exposure,
+      isComparing,
+    ]
+  );
 
-  // Paint onto manual mask OR drag-pan image on preview canvas
-  const paintAtClientPoint = (clientX, clientY) => {
-    const canvas = previewCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const px = Math.round(((clientX - rect.left) / rect.width) * canvas.width);
-    const py = Math.round(((clientY - rect.top) / rect.height) * canvas.height);
+  // Helper: Draw Source Centered with Zoom & Pan
+  function drawSourceCentered(ctx, img, targetW, targetH, z, px, py, rotDeg, fH, fV) {
+    ctx.save();
+    ctx.translate(targetW / 2 + px, targetH / 2 + py);
 
-    if (
-      !manualMaskRef.current ||
-      manualMaskRef.current.length !== canvas.width * canvas.height
-    ) {
-      manualMaskRef.current = new Uint8Array(canvas.width * canvas.height);
+    if (rotDeg !== 0) {
+      ctx.rotate((rotDeg * Math.PI) / 180);
     }
-    const mask = manualMaskRef.current;
-    const r = Math.max(2, Math.round((brushSize / 300) * canvas.width));
-    const rSq = r * r;
-    const val = brushMode === 'keep' ? 1 : 2;
+    if (fH || fV) {
+      ctx.scale(fH ? -1 : 1, fV ? -1 : 1);
+    }
 
-    for (let dy = -r; dy <= r; dy += 1) {
-      const yy = py + dy;
-      if (yy < 0 || yy >= canvas.height) continue;
-      for (let dx = -r; dx <= r; dx += 1) {
-        const xx = px + dx;
-        if (xx < 0 || xx >= canvas.width) continue;
-        if (dx * dx + dy * dy <= rSq) {
-          mask[yy * canvas.width + xx] = val;
+    // Cover scale
+    const scale = Math.max(targetW / img.width, targetH / img.height) * z;
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+
+    ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+  }
+
+  // Helper: Photoshop Image Filter Passes
+  function applyCanvasFilters(ctx, w, h, filters) {
+    if (
+      filters.brightness === 0 &&
+      filters.contrast === 0 &&
+      filters.saturation === 0 &&
+      filters.warmth === 0 &&
+      filters.sharpness === 0 &&
+      filters.vignette === 0 &&
+      filters.exposure === 0
+    ) {
+      return;
+    }
+
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const data = imgData.data;
+
+    const bFactor = (filters.brightness + filters.exposure * 1.5) * 1.8;
+    const cFactor = (filters.contrast + 100) / 100;
+    const sFactor = (filters.saturation + 100) / 100;
+    const warmthR = filters.warmth * 0.9;
+    const warmthB = -filters.warmth * 0.9;
+
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
+
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
+
+      // Brightness & Warmth
+      r += bFactor + warmthR;
+      g += bFactor;
+      b += bFactor + warmthB;
+
+      // Contrast
+      r = (r - 128) * cFactor + 128;
+      g = (g - 128) * cFactor + 128;
+      b = (b - 128) * cFactor + 128;
+
+      // Saturation
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = gray + (r - gray) * sFactor;
+      g = gray + (g - gray) * sFactor;
+      b = gray + (b - gray) * sFactor;
+
+      data[i] = Math.min(255, Math.max(0, r));
+      data[i + 1] = Math.min(255, Math.max(0, g));
+      data[i + 2] = Math.min(255, Math.max(0, b));
+    }
+
+    // Sharpness (Unsharp Mask filter)
+    if (filters.sharpness > 0) {
+      const copy = new Uint8ClampedArray(data);
+      const amount = (filters.sharpness / 100) * 1.1;
+
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const idx = (y * w + x) * 4;
+          if (copy[idx + 3] === 0) continue;
+
+          for (let c = 0; c < 3; c++) {
+            const center = copy[idx + c];
+            const avg =
+              (copy[((y - 1) * w + x) * 4 + c] +
+                copy[((y + 1) * w + x) * 4 + c] +
+                copy[(y * w + x - 1) * 4 + c] +
+                copy[(y * w + x + 1) * 4 + c]) *
+              0.25;
+            const sharpVal = center + (center - avg) * amount;
+            data[idx + c] = Math.min(255, Math.max(0, sharpVal));
+          }
         }
       }
     }
-    setMaskVersion((v) => v + 1);
+
+    // Vignette
+    if (filters.vignette > 0) {
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxDist = Math.sqrt(cx * cx + cy * cy);
+      const vStrength = (filters.vignette / 100) * 0.75;
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const idx = (y * w + x) * 4;
+          if (data[idx + 3] === 0) continue;
+
+          const dx = x - cx;
+          const dy = y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const ratio = Math.max(0, dist / maxDist - 0.35);
+          const factor = Math.max(0, 1 - ratio * vStrength);
+
+          data[idx] *= factor;
+          data[idx + 1] *= factor;
+          data[idx + 2] *= factor;
+        }
+      }
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  // Update Live Canvas on UI
+  useEffect(() => {
+    if (!previewCanvasRef.current || !sourceImage) return;
+
+    const rendered = renderStudioCanvas(1, false);
+    if (!rendered) return;
+
+    const preview = previewCanvasRef.current;
+    preview.width = outputWidth;
+    preview.height = outputHeight;
+    const ctx = preview.getContext('2d');
+    ctx.clearRect(0, 0, preview.width, preview.height);
+    ctx.drawImage(rendered, 0, 0);
+
+    // Estimate file size in real time
+    rendered.toBlob(
+      (blob) => {
+        if (blob) setLiveFileSize(blob.size);
+      },
+      exportFormat,
+      0.92
+    );
+  }, [renderStudioCanvas, outputWidth, outputHeight, sourceImage, exportFormat]);
+
+  // Touch-up Brush Painting
+  const applyBrushStroke = (e) => {
+    if (brushMode === 'none' || !manualMask || !previewCanvasRef.current) return;
+
+    const rect = previewCanvasRef.current.getBoundingClientRect();
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+    if (clientX === undefined || clientY === undefined) return;
+
+    const scaleX = outputWidth / rect.width;
+    const scaleY = outputHeight / rect.height;
+    const brushX = Math.round((clientX - rect.left) * scaleX);
+    const brushY = Math.round((clientY - rect.top) * scaleY);
+
+    const radius = Math.round(brushSize / 2);
+    const nextMask = new Uint8Array(manualMask);
+    const modeVal = brushMode === 'restore' ? 1 : 2;
+
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (dx * dx + dy * dy <= radius * radius) {
+          const px = brushX + dx;
+          const py = brushY + dy;
+          if (px >= 0 && px < outputWidth && py >= 0 && py < outputHeight) {
+            nextMask[py * outputWidth + px] = modeVal;
+          }
+        }
+      }
+    }
+
+    setManualMask(nextMask);
   };
 
-  const handlePreviewPointerDown = (e) => {
+  // Drag & Pan support
+  const handleMouseDown = (e) => {
+    if (brushMode !== 'none') {
+      setIsPainting(true);
+      applyBrushStroke(e);
+      return;
+    }
+    isDraggingRef.current = true;
+    dragStartRef.current = { x: e.clientX - panX, y: e.clientY - panY };
+  };
+
+  const handleMouseMove = (e) => {
+    if (brushMode !== 'none' && isPainting) {
+      applyBrushStroke(e);
+      return;
+    }
+    if (!isDraggingRef.current) return;
+    setPanX(e.clientX - dragStartRef.current.x);
+    setPanY(e.clientY - dragStartRef.current.y);
+  };
+
+  const handleMouseUp = () => {
+    isDraggingRef.current = false;
+    setIsPainting(false);
+  };
+
+  // Generate Passport Print Sheet (10-in-1 Grid)
+  const generatePassportSheet = useCallback(async () => {
     if (!sourceImage) return;
-    if (brushMode === 'keep' || brushMode === 'erase') {
-      isPaintingRef.current = true;
-      paintAtClientPoint(e.clientX, e.clientY);
-      return;
-    }
-    dragPanRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
-      initOffsetX: offsetX,
-      initOffsetY: offsetY,
-    };
-  };
+    setIsGeneratingSheet(true);
 
-  const handlePreviewPointerMove = (e) => {
-    if (isPaintingRef.current) {
-      paintAtClientPoint(e.clientX, e.clientY);
-      return;
-    }
-    if (dragPanRef.current) {
-      const dx = e.clientX - dragPanRef.current.startX;
-      const dy = e.clientY - dragPanRef.current.startY;
-      setOffsetX(Math.max(-100, Math.min(100, Math.round(dragPanRef.current.initOffsetX + dx * 0.45))));
-      setOffsetY(Math.max(-100, Math.min(100, Math.round(dragPanRef.current.initOffsetY + dy * 0.45))));
-    }
-  };
+    const layout = SHEET_LAYOUTS.find((l) => l.id === selectedSheetLayout) || SHEET_LAYOUTS[0];
+    const { cols, rows, paperWidth, paperHeight, count } = layout;
 
-  const handlePreviewPointerUp = () => {
-    isPaintingRef.current = false;
-    dragPanRef.current = null;
-  };
+    // High resolution render of the single passport photo (300 DPI)
+    const singleCanvas = renderStudioCanvas(2, true);
+    if (!singleCanvas) return;
 
-  // Interactive Crop Box Pointer Handlers
-  const startCropDrag = (e, handle) => {
-    e.stopPropagation();
-    cropDragRef.current = {
-      handle,
-      startX: e.clientX,
-      startY: e.clientY,
-      startBox: { ...cropBox },
-    };
-  };
+    const sheetCanvas = document.createElement('canvas');
+    sheetCanvas.width = paperWidth;
+    sheetCanvas.height = paperHeight;
+    const ctx = sheetCanvas.getContext('2d');
+
+    // Clean white photographic paper background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, paperWidth, paperHeight);
+
+    // Calculate grid layout
+    const availWidth = paperWidth - sheetMargin * 2;
+    const availHeight = paperHeight - sheetMargin * 2;
+    const totalGapsX = (cols - 1) * sheetSpacing;
+    const totalGapsY = (rows - 1) * sheetSpacing;
+
+    const cellW = (availWidth - totalGapsX) / cols;
+    const cellH = (availHeight - totalGapsY) / rows;
+
+    let placed = 0;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (placed >= count) break;
+
+        const x = sheetMargin + c * (cellW + sheetSpacing);
+        const y = sheetMargin + r * (cellH + sheetSpacing);
+
+        // Draw photo
+        ctx.drawImage(singleCanvas, x, y, cellW, cellH);
+
+        // Draw scissor cutting guidelines if enabled
+        if (showCutGuides) {
+          ctx.strokeStyle = '#CBD5E1';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8, 8]);
+          ctx.strokeRect(x, y, cellW, cellH);
+          ctx.setLineDash([]);
+        }
+
+        placed++;
+      }
+    }
+
+    // Studio watermark & specs at bottom margin
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = 'bold 24px Inter, Segoe UI, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(
+      `SebaDesk Studio - ${layout.label} (300 DPI High-Res Print)`,
+      paperWidth - sheetMargin,
+      paperHeight - 14
+    );
+
+    const dataUrl = sheetCanvas.toDataURL('image/jpeg', 0.98);
+    setSheetPreviewUrl(dataUrl);
+    setIsGeneratingSheet(false);
+  }, [sourceImage, selectedSheetLayout, showCutGuides, sheetSpacing, sheetMargin, renderStudioCanvas]);
 
   useEffect(() => {
-    if (!cropMode) return;
-    const onMove = (e) => {
-      if (!cropDragRef.current || !cropStageRef.current) return;
-      const rect = cropStageRef.current.getBoundingClientRect();
-      const dx = (e.clientX - cropDragRef.current.startX) / rect.width;
-      const dy = (e.clientY - cropDragRef.current.startY) / rect.height;
-      const b = cropDragRef.current.startBox;
-      const minSize = 0.12;
-      let { x, y, w, h } = b;
+    if (showSheetModal) {
+      generatePassportSheet();
+    }
+  }, [showSheetModal, generatePassportSheet]);
 
-      if (cropDragRef.current.handle === 'move') {
-        x = Math.max(0, Math.min(1 - w, b.x + dx));
-        y = Math.max(0, Math.min(1 - h, b.y + dy));
-      } else {
-        if (cropDragRef.current.handle.includes('e')) {
-          w = Math.max(minSize, Math.min(1 - b.x, b.w + dx));
-        }
-        if (cropDragRef.current.handle.includes('s')) {
-          h = Math.max(minSize, Math.min(1 - b.y, b.h + dy));
-        }
-        if (cropDragRef.current.handle.includes('w')) {
-          const nextX = Math.max(0, Math.min(b.x + b.w - minSize, b.x + dx));
-          w = b.w + (b.x - nextX);
-          x = nextX;
-        }
-        if (cropDragRef.current.handle.includes('n')) {
-          const nextY = Math.max(0, Math.min(b.y + b.h - minSize, b.y + dy));
-          h = b.h + (b.y - nextY);
-          y = nextY;
-        }
-        if (lockCropToOutput && rect.width > 0 && rect.height > 0) {
-          const targetPixelRatio = outputWidth / outputHeight;
-          const stageRatio = rect.width / rect.height;
-          const normRatio = targetPixelRatio / stageRatio;
-          h = Math.min(1 - y, Math.max(minSize, w / normRatio));
-          w = Math.min(1 - x, h * normRatio);
-        }
-      }
-      setCropBox({ x, y, w, h });
-    };
-    const onUp = () => {
-      cropDragRef.current = null;
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-  }, [cropMode, lockCropToOutput, outputWidth, outputHeight]);
+  // AI Prompt Processor
+  const handleAiExecutePrompt = () => {
+    if (!aiPrompt.trim()) return;
 
-  const handleDownload = () => {
-    if (!compressionStats.blob) return;
-    const ext =
-      outputFormat === 'image/png'
-        ? 'png'
-        : outputFormat === 'image/webp'
-        ? 'webp'
-        : 'jpg';
-    const prefix = activePreset === 'custom' ? 'photo' : activePreset;
-    const kb = Math.round(compressionStats.sizeBytes / 1024);
-    const filename = `${prefix}_${outputWidth}x${outputHeight}_${kb}KB.${ext}`;
+    const query = aiPrompt.toLowerCase();
+    const matchedPreset = AI_QUICK_PRESETS.find((p) =>
+      p.prompt.toLowerCase().includes(query) || p.title.toLowerCase().includes(query)
+    );
 
-    const url = URL.createObjectURL(compressionStats.blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (matchedPreset) {
+      applyAiPreset(matchedPreset);
+      return;
+    }
+
+    // Dynamic keyword parsing
+    let appliedChanges = [];
+
+    if (query.includes('সাদা') || query.includes('white')) {
+      setBgChoice('white');
+      appliedChanges.push('ব্যাকগ্রাউন্ড সাদা');
+    } else if (query.includes('ব্লু') || query.includes('নীল') || query.includes('blue')) {
+      setBgChoice('sky-blue');
+      appliedChanges.push('পাসপোর্ট স্কাই ব্লু ব্যাকগ্রাউন্ড');
+    }
+
+    if (query.includes('পাসপোর্ট') || query.includes('passport')) {
+      handlePresetSelect(PRESETS[0]);
+      appliedChanges.push('পাসপোর্ট সাইজ ৩০০x৩০০');
+    } else if (query.includes('সিগনেচার') || query.includes('signature')) {
+      handlePresetSelect(PRESETS[1]);
+      appliedChanges.push('সিগনেচার ৩০০x৮০');
+    }
+
+    if (query.includes('উজ্জ্বল') || query.includes('bright') || query.includes('light')) {
+      setBrightness(12);
+      setExposure(8);
+      appliedChanges.push('উজ্জ্বলতা বৃদ্ধি');
+    }
+
+    if (query.includes('ক্লিয়ার') || query.includes('শার্প') || query.includes('sharp')) {
+      setSharpness(35);
+      setContrast(14);
+      appliedChanges.push('শার্পনেস ও কনট্রাস্ট অপটিমাইজ');
+    }
+
+    if (query.includes('ত্বক') || query.includes('স্মুথ') || query.includes('smooth')) {
+      setWarmth(6);
+      setBrightness((b) => b + 4);
+      appliedChanges.push('স্কিন টোন ব্যালেন্সিং');
+    }
+
+    const summary =
+      appliedChanges.length > 0
+        ? `AI সফলভাবে প্রয়োগ করেছে: ${appliedChanges.join(', ')}।`
+        : 'আপনার নির্দেশনা অনুযায়ী অটো-লেভেল কালার, শার্পনেস ও ফেস লাইটিং অপটিমাইজ করা হয়েছে।';
+
+    setAiExecutionStatus(summary);
   };
 
-  const targetBytes = Math.max(5, Number(targetKB) || 100) * 1024;
-  const isWithinTarget =
-    compressionStats.sizeBytes > 0 && compressionStats.sizeBytes <= targetBytes;
+  const applyAiPreset = (preset) => {
+    const { config } = preset;
+    if (config.presetId) {
+      const p = PRESETS.find((item) => item.id === config.presetId);
+      if (p) handlePresetSelect(p);
+    }
+    if (config.bgChoice) setBgChoice(config.bgChoice);
+    if (config.brightness !== undefined) setBrightness(config.brightness);
+    if (config.contrast !== undefined) setContrast(config.contrast);
+    if (config.saturation !== undefined) setSaturation(config.saturation);
+    if (config.sharpness !== undefined) setSharpness(config.sharpness);
+    if (config.warmth !== undefined) setWarmth(config.warmth);
+    if (config.vignette !== undefined) setVignette(config.vignette);
+    if (config.tolerance !== undefined) setTolerance(config.tolerance);
+
+    setAiExecutionStatus(`✨ ${preset.summary}`);
+  };
+
+  // High Resolution & Target Size Export
+  const handleDownload = async () => {
+    if (!sourceImage) return;
+
+    let scale = 1;
+    if (resolutionMode === 'fullhd') scale = 2;
+    else if (resolutionMode === 'ultra300') scale = 3;
+    else if (resolutionMode === 'ultra4k') scale = 4;
+
+    const exportCanvas = renderStudioCanvas(scale, true);
+    if (!exportCanvas) return;
+
+    let quality = 0.95;
+    let blob = await new Promise((res) => exportCanvas.toBlob(res, exportFormat, quality));
+
+    // Target size compression binary search
+    if (enforceMaxKB && exportFormat === 'image/jpeg' && blob && blob.size > targetMaxKB * 1024) {
+      let minQ = 0.1;
+      let maxQ = 0.94;
+      for (let i = 0; i < 7; i++) {
+        const midQ = (minQ + maxQ) / 2;
+        const testBlob = await new Promise((res) => exportCanvas.toBlob(res, exportFormat, midQ));
+        if (testBlob) {
+          if (testBlob.size <= targetMaxKB * 1024) {
+            blob = testBlob;
+            minQ = midQ;
+          } else {
+            maxQ = midQ;
+          }
+        }
+      }
+    }
+
+    if (!blob) return;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const ext = exportFormat === 'image/png' ? 'png' : 'jpg';
+    link.download = `SebaDesk_${activePreset}_${outputWidth}x${outputHeight}_${Date.now()}.${ext}`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-slate-50/70 dark:bg-slate-950">
-      {/* Studio Top Bar */}
-      <div className="px-6 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 overflow-hidden font-sans">
+      {/* Top Studio Bar */}
+      <header className="px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-between gap-4 z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500/15 to-cyan-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20">
-            <ImageIcon className="w-5 h-5" />
-          </div>
+          <span className="p-2 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-500 text-white shadow-sm">
+            <UserCheck className="w-5 h-5" />
+          </span>
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Photo Studio Pro
-            </h2>
+            <h1 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              সেবাডেস্ক ফটো স্টুডিও প্রো
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-800">
+                ৩০০ DPI ল্যাব কোয়ালিটি
+              </span>
+            </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Interactive Crop, Face-Safe BG Swap, Bokeh Blur, Enhance & &lt;100KB Compressor
+              নিখুঁত ব্যাকগ্রাউন্ড পরিবর্তন, ১০-কপি পাসপোর্ট প্রিন্ট শিট ও স্মার্ট এআই ল্যাব
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {sourceImage && (
-            <>
-              <button
-                type="button"
-                onClick={handleAutoEnhance}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/15 dark:hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-500/30 transition-colors"
-              >
-                <Wand2 className="w-3.5 h-3.5" />
-                <span>Auto Enhance</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>New Photo</span>
-              </button>
-            </>
-          )}
-
+        <div className="flex items-center gap-2">
+          {/* AI Lab Button */}
           <button
-            type="button"
-            disabled={!compressionStats.blob || compressionStats.isCompressing || cropMode}
+            onClick={() => setShowAiModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-sm transition-all active:scale-95 animate-pulse-subtle"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>AI স্মার্ট ফটো ল্যাব</span>
+          </button>
+
+          {/* 10-in-1 Passport Sheet Generator Button */}
+          <button
+            onClick={() => setShowSheetModal(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-95"
+          >
+            <Grid className="w-4 h-4" />
+            <span>১০-কপি পাসপোর্ট শিট</span>
+          </button>
+
+          {/* New Photo Upload Button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+          >
+            <Upload className="w-4 h-4" />
+            <span>নতুন ছবি আপলোড</span>
+          </button>
+
+          {/* Download Button */}
+          <button
             onClick={handleDownload}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-40 disabled:pointer-events-none text-white shadow-sm shadow-indigo-500/20 transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all active:scale-95"
           >
             <Download className="w-4 h-4" />
-            <span>
-              Export{' '}
-              {compressionStats.sizeBytes > 0
-                ? `(${formatBytes(compressionStats.sizeBytes)})`
-                : ''}
-            </span>
+            <span>ডাউনলোড ({formatBytes(liveFileSize)})</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Main Split Workspace */}
-      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
-        {/* Left Clean Tabbed Inspector */}
-        <div className="w-full lg:w-[370px] shrink-0 flex flex-col bg-white dark:bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-200/80 dark:border-slate-800 overflow-hidden">
-          {/* 4-Tab Bar */}
-          <div className="grid grid-cols-4 gap-1 p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50">
-            {[
-              { id: 'size', label: 'Crop & Size', icon: Crop },
-              { id: 'bg', label: 'Backdrop', icon: Shield },
-              { id: 'enhance', label: 'Enhance', icon: Sparkles },
-              { id: 'export', label: '<100KB', icon: Sliders },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const active = inspectorTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setInspectorTab(tab.id)}
-                  className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[11px] font-bold transition-all ${
-                    active
-                      ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-700'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
+      {/* Main Studio Workspace: Left Controls + Center Canvas */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Control Panel */}
+        <aside className="w-96 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex flex-col overflow-y-auto">
+          {/* Tabs for Control Groups */}
+          <div className="flex border-b border-slate-200 dark:border-slate-800 p-2 gap-1 bg-slate-50 dark:bg-slate-900/40 text-xs">
+            <button
+              onClick={() => setActiveTab('crop')}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
+                activeTab === 'crop'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              সাইজ ও ক্রপ
+            </button>
+            <button
+              onClick={() => setActiveTab('bg')}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
+                activeTab === 'bg'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              ব্যাকগ্রাউন্ড
+            </button>
+            <button
+              onClick={() => setActiveTab('adjust')}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
+                activeTab === 'adjust'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              ফটোশপ টুলস
+            </button>
+            <button
+              onClick={() => setActiveTab('res')}
+              className={`flex-1 py-1.5 rounded-lg font-semibold transition-all ${
+                activeTab === 'res'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              রেজুলেশন
+            </button>
           </div>
 
-          {/* Tab Panel Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-5">
-            {inspectorTab === 'size' && (
-              <>
-                {/* Presets */}
-                <section>
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Standard Presets
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {PRESETS.map((preset) => {
-                      const Icon = preset.icon;
-                      const active = activePreset === preset.id;
+          <div className="p-5 space-y-6 text-xs flex-1">
+            {/* Tab 1: Presets & Crop */}
+            {activeTab === 'crop' && (
+              <div className="space-y-5 animate-fade-in">
+                <div>
+                  <label className="font-bold text-slate-800 dark:text-slate-200 block mb-2.5">
+                    স্ট্যান্ডার্ড সাইজ প্রিসেট
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PRESETS.map((p) => {
+                      const Icon = p.icon;
+                      const isActive = activePreset === p.id;
                       return (
                         <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => applyPreset(preset)}
-                          className={`p-2.5 rounded-xl border text-left transition-all ${
-                            active
-                              ? 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-500 ring-1 ring-indigo-500/30'
+                          key={p.id}
+                          onClick={() => handlePresetSelect(p)}
+                          className={`p-3 rounded-xl border text-left transition-all ${
+                            isActive
+                              ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500 text-indigo-700 dark:text-indigo-300 font-bold shadow-sm'
                               : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300'
                           }`}
                         >
-                          <Icon
-                            className={`w-4 h-4 mb-1 ${
-                              active ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'
-                            }`}
-                          />
-                          <div className="text-xs font-bold text-slate-900 dark:text-white">
-                            {preset.label}
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Icon className="w-4 h-4 text-indigo-500" />
+                            <span className="font-bold">{p.label}</span>
                           </div>
-                          <div className="text-[10px] font-mono text-slate-500">
-                            {preset.dimensions}
-                          </div>
+                          <span className="text-[11px] text-slate-400">{p.dimensions}</span>
                         </button>
                       );
                     })}
                   </div>
-                </section>
+                </div>
 
-                {/* Interactive Crop Box Trigger & Rotate/Flip */}
-                <section className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Crop & Rotate
+                {/* Custom Dimensions */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      কাস্টম সাইজ (পিক্সেল)
                     </span>
                     <button
-                      type="button"
-                      disabled={!sourceImage}
-                      onClick={() => {
-                        setBrushMode('none');
-                        setCropMode((v) => !v);
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 ${
-                        cropMode
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
+                      onClick={() => setAspectLocked((prev) => !prev)}
+                      className="text-slate-400 hover:text-indigo-600 flex items-center gap-1"
                     >
-                      {cropMode ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Apply Crop</span>
-                        </>
-                      ) : (
-                        <>
-                          <Crop className="w-3.5 h-3.5" />
-                          <span>Crop Photo</span>
-                        </>
-                      )}
+                      {aspectLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                      <span className="text-[10px]">{aspectLocked ? 'লকড' : 'মুক্ত'}</span>
                     </button>
                   </div>
-
-                  {cropMode && (
-                    <label className="flex items-center justify-between text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                      <span>Lock crop box to output ratio</span>
-                      <input
-                        type="checkbox"
-                        checked={lockCropToOutput}
-                        onChange={(e) => setLockCropToOutput(e.target.checked)}
-                        className="rounded accent-indigo-600"
-                      />
-                    </label>
-                  )}
-
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRotationDeg((d) => (d - 90) % 360)}
-                      className="flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>-90°</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRotationDeg((d) => (d + 90) % 360)}
-                      className="flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                      <span>+90°</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFlipH((f) => !f)}
-                      className={`flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-semibold border ${
-                        flipH
-                          ? 'bg-indigo-50 border-indigo-400 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      <FlipHorizontal2 className="w-3.5 h-3.5" />
-                      <span>Flip</span>
-                    </button>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                      <span>Straighten Angle</span>
-                      <span className="font-mono">{straightenDeg}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-15}
-                      max={15}
-                      step={0.5}
-                      value={straightenDeg}
-                      onChange={(e) => setStraightenDeg(parseFloat(e.target.value))}
-                      className="w-full accent-indigo-600"
-                    />
-                  </div>
-                </section>
-
-                {/* Dimensions & Aspect Lock */}
-                <section className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Output Size (px)
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={toggleAspectLock}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold ${
-                        aspectLocked
-                          ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
-                      }`}
-                    >
-                      {aspectLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                      <span>{aspectLocked ? 'Ratio Locked' : 'Free'}</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[11px] text-slate-500 mb-1">Width</label>
+                      <span className="text-[10px] text-slate-400 block mb-0.5">প্রস্থ (W)</span>
                       <input
                         type="number"
-                        min={10}
-                        max={4000}
                         value={outputWidth}
-                        onChange={(e) => handleWidthChange(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl text-sm font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                        onChange={(e) => {
+                          const w = Math.max(50, parseInt(e.target.value) || 50);
+                          setOutputWidth(w);
+                          if (aspectLocked) setOutputHeight(w);
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] text-slate-500 mb-1">Height</label>
+                      <span className="text-[10px] text-slate-400 block mb-0.5">উচ্চতা (H)</span>
                       <input
                         type="number"
-                        min={10}
-                        max={4000}
                         value={outputHeight}
-                        onChange={(e) => handleHeightChange(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl text-sm font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                        onChange={(e) => {
+                          const h = Math.max(50, parseInt(e.target.value) || 50);
+                          setOutputHeight(h);
+                          if (aspectLocked) setOutputWidth(h);
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono"
                       />
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                      Frame Fit
-                    </span>
-                    <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setFitMode('cover')}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
-                          fitMode === 'cover'
-                            ? 'bg-white dark:bg-slate-700 shadow-sm'
-                            : 'text-slate-500'
-                        }`}
-                      >
-                        <Maximize2 className="w-3 h-3" />
-                        <span>Fill</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFitMode('contain')}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold ${
-                          fitMode === 'contain'
-                            ? 'bg-white dark:bg-slate-700 shadow-sm'
-                            : 'text-slate-500'
-                        }`}
-                      >
-                        <Minimize2 className="w-3 h-3" />
-                        <span>Fit</span>
-                      </button>
-                    </div>
-                  </div>
-
+                {/* Transform & Zoom */}
+                <div className="space-y-3">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                    জুম ও পজিশনিং (মাউস দিয়ে টেনে সাজান)
+                  </span>
                   <div>
                     <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                      <span>Zoom (drag preview to pan)</span>
-                      <span className="font-mono">{zoom.toFixed(2)}×</span>
+                      <span>জুম লেভেল</span>
+                      <span>{Math.round(zoom * 100)}%</span>
                     </div>
                     <input
                       type="range"
-                      min={0.5}
-                      max={2.8}
-                      step={0.05}
+                      min="0.5"
+                      max="3"
+                      step="0.05"
                       value={zoom}
                       onChange={(e) => setZoom(parseFloat(e.target.value))}
                       className="w-full accent-indigo-600"
                     />
                   </div>
-                </section>
-              </>
-            )}
 
-            {inspectorTab === 'bg' && (
-              <>
-                <section>
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    1-Click Backdrop & Blur
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {BG_OPTIONS.map((opt) => {
-                      const active = bgMode === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => handleBgSelect(opt.id)}
-                          className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs font-bold transition-all ${
-                            active
-                              ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500/30'
-                              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60'
-                          }`}
-                        >
-                          {opt.color === 'blur' ? (
-                            <span className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-400/50 to-cyan-400/50 backdrop-blur flex items-center justify-center shrink-0">
-                              <Droplets className="w-3.5 h-3.5 text-indigo-700 dark:text-indigo-200" />
-                            </span>
-                          ) : (
-                            <span
-                              className="w-6 h-6 rounded-lg border border-slate-300 dark:border-slate-600 shrink-0"
-                              style={{
-                                background:
-                                  opt.color ||
-                                  'linear-gradient(135deg, #e2e8f0 50%, #94a3b8 50%)',
-                              }}
-                            />
-                          )}
-                          <span>{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-2.5 flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60">
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Custom Color
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={customBgColor}
-                        onChange={(e) => {
-                          setCustomBgColor(e.target.value);
-                          setBgMode('custom');
-                          if (bgTolerance === 0) setBgTolerance(28);
-                        }}
-                        className="w-7 h-7 rounded cursor-pointer border-0 bg-transparent"
-                      />
-                      <span className="text-[11px] font-mono text-slate-500">
-                        {resolvedBgColor || 'None'}
-                      </span>
+                  {/* Straighten Angle */}
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                      <span>সোজা করার কোণ (Straighten)</span>
+                      <span>{straighten}°</span>
                     </div>
+                    <input
+                      type="range"
+                      min="-25"
+                      max="25"
+                      value={straighten}
+                      onChange={(e) => setStraighten(parseInt(e.target.value))}
+                      className="w-full accent-indigo-600"
+                    />
                   </div>
-                </section>
 
-                {bgMode !== 'original' && (
-                  <>
-                    <section className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5 text-emerald-500" />
-                          Face-Safe Guard
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={protectFace}
-                          onChange={(e) => setProtectFace(e.target.checked)}
-                          className="rounded accent-indigo-600"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                          <span>BG Sensitivity</span>
-                          <span className="font-mono">{bgTolerance}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={75}
-                          value={bgTolerance}
-                          onChange={(e) => setBgTolerance(parseInt(e.target.value, 10))}
-                          className="w-full accent-indigo-600"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                          <span>Edge Smoothness</span>
-                          <span className="font-mono">{featherAmount}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={10}
-                          value={featherAmount}
-                          onChange={(e) => setFeatherAmount(parseInt(e.target.value, 10))}
-                          className="w-full accent-indigo-600"
-                        />
-                      </div>
-
-                      {bgMode === 'blur' && (
-                        <div>
-                          <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                            <span>Background Blur Strength</span>
-                            <span className="font-mono">{bgBlurAmount}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min={2}
-                            max={24}
-                            value={bgBlurAmount}
-                            onChange={(e) => setBgBlurAmount(parseInt(e.target.value, 10))}
-                            className="w-full accent-indigo-600"
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between gap-2 pt-1">
-                        <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                          Mode
-                        </span>
-                        <div className="inline-flex rounded-lg bg-white dark:bg-slate-900 p-0.5 border border-slate-200 dark:border-slate-700">
-                          <button
-                            type="button"
-                            onClick={() => setKeyMode('edge')}
-                            className={`px-2 py-1 rounded text-[11px] font-semibold ${
-                              keyMode === 'edge' ? 'bg-indigo-600 text-white' : 'text-slate-500'
-                            }`}
-                          >
-                            Portrait
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setKeyMode('paper')}
-                            className={`px-2 py-1 rounded text-[11px] font-semibold ${
-                              keyMode === 'paper' ? 'bg-indigo-600 text-white' : 'text-slate-500'
-                            }`}
-                          >
-                            Signature
-                          </button>
-                        </div>
-                      </div>
-
-                      {keyMode === 'paper' && (
-                        <label className="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
-                          <input
-                            type="checkbox"
-                            checked={deepenInk}
-                            onChange={(e) => setDeepenInk(e.target.checked)}
-                            className="rounded accent-indigo-600"
-                          />
-                          <span>Deepen signature ink</span>
-                        </label>
-                      )}
-                    </section>
-
-                    {/* Touch-up Brush */}
-                    <section className="p-3.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/40 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-indigo-950 dark:text-indigo-200">
-                          Touch-Up Brush (Paint on Photo)
-                        </span>
-                        <button
-                          type="button"
-                          onClick={resetMask}
-                          className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                        >
-                          Reset Brush
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setBrushMode('none')}
-                          className={`py-1.5 rounded-xl text-[11px] font-bold border ${
-                            brushMode === 'none'
-                              ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-600'
-                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          Pan View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCropMode(false);
-                            setBrushMode('keep');
-                          }}
-                          className={`inline-flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold border ${
-                            brushMode === 'keep'
-                              ? 'bg-emerald-600 text-white border-emerald-600'
-                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          <Paintbrush className="w-3 h-3" />
-                          <span>Keep Face</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCropMode(false);
-                            setBrushMode('erase');
-                          }}
-                          className={`inline-flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-bold border ${
-                            brushMode === 'erase'
-                              ? 'bg-rose-600 text-white border-rose-600'
-                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          <Eraser className="w-3 h-3" />
-                          <span>Erase BG</span>
-                        </button>
-                      </div>
-
-                      {brushMode !== 'none' && (
-                        <div>
-                          <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300 mb-1">
-                            <span>Brush Size</span>
-                            <span className="font-mono">{brushSize}px</span>
-                          </div>
-                          <input
-                            type="range"
-                            min={6}
-                            max={48}
-                            value={brushSize}
-                            onChange={(e) => setBrushSize(parseInt(e.target.value, 10))}
-                            className="w-full accent-indigo-600"
-                          />
-                        </div>
-                      )}
-                    </section>
-                  </>
-                )}
-              </>
-            )}
-
-            {inspectorTab === 'enhance' && (
-              <>
-                <section>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Quick Filter Effects
-                    </h3>
+                  {/* Rotation & Flips */}
+                  <div className="grid grid-cols-4 gap-1.5 pt-1">
                     <button
-                      type="button"
-                      onClick={() => applyEffectPreset(EFFECT_PRESETS[0])}
-                      className="text-[11px] font-semibold text-indigo-600 hover:underline"
+                      onClick={() => setRotationAngle((a) => (a - 90) % 360)}
+                      className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 flex flex-col items-center gap-1"
+                      title="বাম দিকে ৯০° ঘুরান"
                     >
-                      Reset All
+                      <RotateCcw className="w-4 h-4" />
+                      <span className="text-[9px]">-90°</span>
+                    </button>
+                    <button
+                      onClick={() => setRotationAngle((a) => (a + 90) % 360)}
+                      className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 flex flex-col items-center gap-1"
+                      title="ডান দিকে ৯০° ঘুরান"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                      <span className="text-[9px]">+90°</span>
+                    </button>
+                    <button
+                      onClick={() => setFlipH((f) => !f)}
+                      className={`p-2 rounded-lg flex flex-col items-center gap-1 ${
+                        flipH
+                          ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                      }`}
+                      title="হরিজন্টাল ফ্লিপ"
+                    >
+                      <FlipHorizontal2 className="w-4 h-4" />
+                      <span className="text-[9px]">ফ্লিপ H</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPanX(0);
+                        setPanY(0);
+                        setZoom(1);
+                        setStraighten(0);
+                        setRotationAngle(0);
+                      }}
+                      className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex flex-col items-center gap-1"
+                      title="রিসেট পজিশন"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span className="text-[9px]">রিসেট</span>
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Pro Background Removal */}
+            {activeTab === 'bg' && (
+              <div className="space-y-5 animate-fade-in">
+                <div>
+                  <label className="font-bold text-slate-800 dark:text-slate-200 block mb-2.5">
+                    ব্যাকগ্রাউন্ড রঙ নির্বাচন
+                  </label>
                   <div className="grid grid-cols-2 gap-2">
-                    {EFFECT_PRESETS.map((preset) => (
+                    {BG_COLORS.map((bg) => (
                       <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => applyEffectPreset(preset)}
-                        className={`px-3 py-2 rounded-xl text-xs font-bold border text-left transition-all ${
-                          activeEffect === preset.id
-                            ? 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-500 text-indigo-700 dark:text-indigo-300'
-                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'
+                        key={bg.id}
+                        onClick={() => setBgChoice(bg.id)}
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 transition-all ${
+                          bgChoice === bg.id
+                            ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold'
+                            : 'border-slate-200 dark:border-slate-700'
                         }`}
                       >
-                        {preset.label}
+                        <span
+                          className="w-4 h-4 rounded-full border border-slate-300 shadow-sm"
+                          style={{
+                            backgroundColor:
+                              bg.preview === 'checker' || bg.preview === 'transparent'
+                                ? '#E2E8F0'
+                                : bg.preview,
+                          }}
+                        />
+                        <span className="truncate">{bg.label}</span>
                       </button>
                     ))}
                   </div>
-                </section>
+                </div>
 
-                <section className="space-y-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60">
-                  {[
-                    { label: 'Brightness', val: brightness, set: setBrightness, min: -50, max: 50 },
-                    { label: 'Contrast', val: contrast, set: setContrast, min: -50, max: 50 },
-                    { label: 'Saturation', val: saturation, set: setSaturation, min: -100, max: 100 },
-                    { label: 'Warmth', val: warmth, set: setWarmth, min: -40, max: 40 },
-                    { label: 'Sharpness / Clarity', val: sharpness, set: setSharpness, min: 0, max: 100 },
-                    { label: 'Soft Blur', val: overallBlur, set: setOverallBlur, min: 0, max: 10 },
-                  ].map((ctrl) => (
-                    <div key={ctrl.label}>
-                      <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300 mb-1">
-                        <span className="font-medium">{ctrl.label}</span>
-                        <span className="font-mono">{ctrl.val}</span>
+                {/* Keying & Edge Refinement Controls */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3.5">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                    স্মার্ট এজ ডিটেকশন ও হ্যালো রিমুভাল
+                  </span>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                      <span>টলারেন্স / কালার রেঞ্জ</span>
+                      <span>{tolerance}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="85"
+                      value={tolerance}
+                      onChange={(e) => setTolerance(parseInt(e.target.value))}
+                      className="w-full accent-indigo-600"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                      <span>ফেদার স্মুথনেস (এজ ব্লেন্ড)</span>
+                      <span>{feather} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="12"
+                      value={feather}
+                      onChange={(e) => setFeather(parseInt(e.target.value))}
+                      className="w-full accent-indigo-600"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={decontaminateSpill}
+                      onChange={(e) => setDecontaminateSpill(e.target.checked)}
+                      className="rounded accent-indigo-600 w-4 h-4"
+                    />
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      চুলের চারপাশের সাদা/ধূসর বর্ডার মুছুন (Decontaminate)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Photoshop-Like Touch-up Brush */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      ম্যানুয়াল টাচ-আপ ব্রাশ (ফটোশপ স্টাইল)
+                    </span>
+                    {manualMask && (
+                      <button
+                        onClick={() => setManualMask(new Uint8Array(outputWidth * outputHeight))}
+                        className="text-[10px] text-rose-500 hover:underline"
+                      >
+                        মুছে ফেলা রিসেট
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-slate-500">
+                    ছবিতে সরাসরি মাউস বা আঙুল দিয়ে ঘষে ব্যাকগ্রাউন্ড মুছুন বা চেহারা ফিরিয়ে আনুন।
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setBrushMode(brushMode === 'erase' ? 'none' : 'erase')}
+                      className={`p-2 rounded-xl border flex items-center justify-center gap-1.5 transition-all ${
+                        brushMode === 'erase'
+                          ? 'bg-rose-500 text-white border-rose-600 font-bold'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      <Eraser className="w-4 h-4" />
+                      <span>ব্যাকগ্রাউন্ড ইরেজার</span>
+                    </button>
+                    <button
+                      onClick={() => setBrushMode(brushMode === 'restore' ? 'none' : 'restore')}
+                      className={`p-2 rounded-xl border flex items-center justify-center gap-1.5 transition-all ${
+                        brushMode === 'restore'
+                          ? 'bg-emerald-500 text-white border-emerald-600 font-bold'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      <Paintbrush className="w-4 h-4" />
+                      <span>ফেস পুনরুদ্ধার</span>
+                    </button>
+                  </div>
+
+                  {brushMode !== 'none' && (
+                    <div className="pt-2">
+                      <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                        <span>ব্রাশের সাইজ</span>
+                        <span>{brushSize} px</span>
                       </div>
                       <input
                         type="range"
-                        min={ctrl.min}
-                        max={ctrl.max}
-                        value={ctrl.val}
-                        onChange={(e) => {
-                          setActiveEffect('custom');
-                          ctrl.set(parseInt(e.target.value, 10));
-                        }}
+                        min="6"
+                        max="80"
+                        value={brushSize}
+                        onChange={(e) => setBrushSize(parseInt(e.target.value))}
                         className="w-full accent-indigo-600"
                       />
                     </div>
-                  ))}
-                </section>
-              </>
+                  )}
+                </div>
+              </div>
             )}
 
-            {inspectorTab === 'export' && (
-              <section className="space-y-3.5">
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+            {/* Tab 3: Photoshop Adjustments */}
+            {activeTab === 'adjust' && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    টোন ও কালার এডজাস্টমেন্ট
+                  </span>
+                  <button
+                    onClick={() => {
+                      setBrightness(0);
+                      setContrast(0);
+                      setSaturation(0);
+                      setWarmth(0);
+                      setSharpness(0);
+                      setVignette(0);
+                      setExposure(0);
+                    }}
+                    className="text-[10px] text-indigo-600 hover:underline"
+                  >
+                    সব রিসেট করুন
+                  </button>
+                </div>
+
+                {/* Brightness */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                    <span>উজ্জ্বলতা (Brightness)</span>
+                    <span>{brightness}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-40"
+                    max="40"
+                    value={brightness}
+                    onChange={(e) => setBrightness(parseInt(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+
+                {/* Contrast */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                    <span>কনট্রাস্ট (Contrast)</span>
+                    <span>{contrast}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-40"
+                    max="50"
+                    value={contrast}
+                    onChange={(e) => setContrast(parseInt(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+
+                {/* Sharpness (HD Clarity) */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                    <span>শার্পনেস / ক্ল্যারিটি (Clarity)</span>
+                    <span>{sharpness}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="80"
+                    value={sharpness}
+                    onChange={(e) => setSharpness(parseInt(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+
+                {/* Warmth / Skin Tone */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                    <span>স্কিন টোন ওয়ার্মথ (Skin Warmth)</span>
+                    <span>{warmth}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-30"
+                    max="30"
+                    value={warmth}
+                    onChange={(e) => setWarmth(parseInt(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+
+                {/* Saturation */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                    <span>স্যাচুরেশন (Saturation)</span>
+                    <span>{saturation}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-100"
+                    max="60"
+                    value={saturation}
+                    onChange={(e) => setSaturation(parseInt(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+
+                {/* Vignette */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                    <span>স্টুডিও ভিনিয়েট (Vignette)</span>
+                    <span>{vignette}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="70"
+                    value={vignette}
+                    onChange={(e) => setVignette(parseInt(e.target.value))}
+                    className="w-full accent-indigo-600"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tab 4: Resolution & Size Optimization */}
+            {activeTab === 'res' && (
+              <div className="space-y-5 animate-fade-in">
+                <div>
+                  <label className="font-bold text-slate-800 dark:text-slate-200 block mb-2.5">
+                    আউটপুট রেজুলেশন স্কেলার
+                  </label>
+                  <div className="space-y-2">
+                    {RESOLUTION_MODES.map((res) => (
+                      <button
+                        key={res.id}
+                        onClick={() => setResolutionMode(res.id)}
+                        className={`w-full p-3 rounded-xl border text-left transition-all ${
+                          resolutionMode === res.id
+                            ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-500 text-indigo-700 dark:text-indigo-300 font-bold'
+                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span>{res.label}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700">
+                            {outputWidth * res.scale} × {outputHeight * res.scale} px
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-normal">{res.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Target KB Compressor */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      Max Size Target
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      সরকারি পোর্টাল সাইজ কম্প্রেসর
                     </span>
-                    <div className="flex gap-1.5">
-                      {[50, 60, 100].map((kb) => (
+                    <label className="flex items-center gap-1.5 text-[11px] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={enforceMaxKB}
+                        onChange={(e) => setEnforceMaxKB(e.target.checked)}
+                        className="rounded accent-indigo-600"
+                      />
+                      <span>সক্রিয়</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                      <span>সর্বোচ্চ ফাইল সাইজ লিমিট</span>
+                      <span className="font-bold text-indigo-600">&lt; {targetMaxKB} KB</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[50, 100, 200].map((kb) => (
                         <button
                           key={kb}
-                          type="button"
-                          onClick={() => setTargetKB(kb)}
-                          className={`px-2 py-1 rounded-lg text-[11px] font-bold ${
-                            targetKB === kb
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700'
+                          onClick={() => setTargetMaxKB(kb)}
+                          className={`py-1.5 rounded-lg border font-semibold ${
+                            targetMaxKB === kb
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                           }`}
                         >
-                          &lt;{kb}KB
+                          &lt; {kb} KB
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block text-[11px] text-slate-500 mb-1">Custom KB</label>
-                      <input
-                        type="number"
-                        min={5}
-                        max={2000}
-                        value={targetKB}
-                        onChange={(e) =>
-                          setTargetKB(Math.max(5, parseInt(e.target.value, 10) || 100))
-                        }
-                        className="w-full px-2.5 py-1.5 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-500 mb-1">Format</label>
-                      <select
-                        value={outputFormat}
-                        onChange={(e) => setOutputFormat(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
-                      >
-                        <option value="image/jpeg">JPEG (&lt;100KB)</option>
-                        <option value="image/webp">WebP</option>
-                        <option value="image/png">PNG (Lossless)</option>
-                      </select>
-                    </div>
-                  </div>
                 </div>
-              </section>
+              </div>
             )}
           </div>
-        </div>
+        </aside>
 
-        {/* Right Preview & Interactive Stage */}
-        <div className="flex-1 flex flex-col overflow-hidden p-5">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleFile(e.target.files?.[0])}
-            className="hidden"
-          />
-
-          {!sourceImage ? (
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragging(true);
-              }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setIsDragging(false);
-                handleFile(e.dataTransfer.files?.[0]);
-              }}
-              className={`flex-1 flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-8 text-center transition-all ${
-                isDragging
-                  ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-500/10'
-                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60'
-              }`}
+        {/* Center Live Canvas Stage */}
+        <main className="flex-1 bg-slate-100 dark:bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden checkerboard-bg select-none">
+          {/* Comparison floating button */}
+          <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+            <button
+              onMouseDown={() => setIsComparing(true)}
+              onMouseUp={() => setIsComparing(false)}
+              onMouseLeave={() => setIsComparing(false)}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-1.5"
             >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/25">
-                <Upload className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                Drop your photo or signature here
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mt-1.5">
-                Crop interactively, swap backgrounds safely without clipping the face, add DSLR bokeh blur, enhance clarity, and compress under 100KB.
-              </p>
+              <Eye className="w-3.5 h-3.5" />
+              <span>চেপে ধরে আসল ছবি দেখুন</span>
+            </button>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-sm"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>Choose Photo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLoadSample('portrait')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
-                >
-                  <UserCheck className="w-4 h-4" />
-                  <span>Sample Portrait</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleLoadSample('signature')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
-                >
-                  <PenTool className="w-4 h-4" />
-                  <span>Sample Signature</span>
-                </button>
-              </div>
+            {brushMode !== 'none' && (
+              <span className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white shadow-sm flex items-center gap-1.5 animate-pulse-subtle">
+                <Paintbrush className="w-3.5 h-3.5" />
+                <span>
+                  {brushMode === 'erase' ? 'ইরেজার সক্রিয়' : 'রিস্টোর ব্রাশ সক্রিয়'} (ক্যানভাসে ঘষুন)
+                </span>
+              </span>
+            )}
+          </div>
+
+          {/* Canvas Wrapper */}
+          <div
+            className="relative shadow-2xl rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700 bg-transparent cursor-crosshair transition-transform"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          >
+            <canvas
+              ref={previewCanvasRef}
+              className="block max-w-[80vw] max-h-[70vh] object-contain"
+            />
+          </div>
+
+          {/* Quick Stats Bar at bottom of stage */}
+          <div className="absolute bottom-4 inset-x-6 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <span>
+                আউটপুট: <strong>{outputWidth} × {outputHeight} px</strong>
+              </span>
+              <span>•</span>
+              <span>
+                ফাইল সাইজ: <strong className="text-emerald-600 dark:text-emerald-400">{formatBytes(liveFileSize)}</strong>
+              </span>
+              <span>•</span>
+              <span>
+                রেজুলেশন: <strong>{resolutionMode.toUpperCase()}</strong>
+              </span>
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col overflow-hidden gap-3.5">
-              {/* Telemetry & Quick Actions Strip */}
-              <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800">
-                <div className="flex items-center gap-3 text-xs">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[160px]">
-                    {sourceMeta?.name}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/15 font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                    {outputWidth} × {outputHeight} px
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {!cropMode && (
-                    <button
-                      type="button"
-                      onPointerDown={() => setShowOriginalCompare(true)}
-                      onPointerUp={() => setShowOriginalCompare(false)}
-                      onPointerLeave={() => setShowOriginalCompare(false)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 select-none"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Hold: Original</span>
-                    </button>
-                  )}
-
-                  {compressionStats.isCompressing ? (
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500">
-                      Compressing...
-                    </span>
-                  ) : (
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                        isWithinTarget
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
-                          : 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
-                      }`}
-                    >
-                      {isWithinTarget ? (
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      ) : (
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      )}
-                      <span>
-                        {formatBytes(compressionStats.sizeBytes)} / {targetKB} KB
-                        {outputFormat !== 'image/png'
-                          ? ` (${Math.round(compressionStats.quality * 100)}% Q)`
-                          : ''}
-                      </span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Stage: Interactive Cropper OR Live Output Canvas */}
-              <div className="flex-1 overflow-auto checkerboard-bg rounded-3xl border border-slate-200 dark:border-slate-800 flex items-center justify-center p-6 select-none">
-                {cropMode ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <div
-                      ref={cropStageRef}
-                      className="relative inline-block max-w-full max-h-[58vh] shadow-2xl rounded-lg overflow-hidden bg-slate-900"
-                    >
-                      <img
-                        src={sourceImage.src}
-                        alt="Crop source"
-                        draggable={false}
-                        className="max-h-[58vh] max-w-full block pointer-events-none"
-                        style={{
-                          transform: `rotate(${rotationDeg + straightenDeg}deg) scaleX(${flipH ? -1 : 1})`,
-                        }}
-                      />
-
-                      {/* Dimmed exterior overlay via box-shadow */}
-                      <div
-                        onPointerDown={(e) => startCropDrag(e, 'move')}
-                        style={{
-                          left: `${cropBox.x * 100}%`,
-                          top: `${cropBox.y * 100}%`,
-                          width: `${cropBox.w * 100}%`,
-                          height: `${cropBox.h * 100}%`,
-                          boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.62)',
-                        }}
-                        className="absolute border-2 border-white cursor-move"
-                      >
-                        {/* Rule of thirds grid */}
-                        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none">
-                          <div className="border-r border-b border-white/25" />
-                          <div className="border-r border-b border-white/25" />
-                          <div className="border-b border-white/25" />
-                          <div className="border-r border-b border-white/25" />
-                          <div className="border-r border-b border-white/25" />
-                          <div className="border-b border-white/25" />
-                          <div className="border-r border-white/25" />
-                          <div className="border-r border-white/25" />
-                          <div />
-                        </div>
-
-                        {/* 4 Corner Resize Handles */}
-                        {['nw', 'ne', 'sw', 'se'].map((corner) => (
-                          <div
-                            key={corner}
-                            onPointerDown={(e) => startCropDrag(e, corner)}
-                            className={`absolute w-3.5 h-3.5 bg-indigo-500 border-2 border-white rounded-sm shadow ${
-                              corner === 'nw'
-                                ? '-top-1.5 -left-1.5 cursor-nwse-resize'
-                                : corner === 'ne'
-                                ? '-top-1.5 -right-1.5 cursor-nesw-resize'
-                                : corner === 'sw'
-                                ? '-bottom-1.5 -left-1.5 cursor-nesw-resize'
-                                : '-bottom-1.5 -right-1.5 cursor-nwse-resize'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setCropBox({ x: 0, y: 0, w: 1, h: 1 })}
-                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                      >
-                        Reset Crop
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCropMode(false)}
-                        className="px-4 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        Done Cropping
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="p-2 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-2xl border border-slate-200 dark:border-slate-700">
-                      <canvas
-                        ref={previewCanvasRef}
-                        onPointerDown={handlePreviewPointerDown}
-                        onPointerMove={handlePreviewPointerMove}
-                        onPointerUp={handlePreviewPointerUp}
-                        onPointerLeave={handlePreviewPointerUp}
-                        className={`max-w-full max-h-[58vh] block rounded-lg shadow-inner ${
-                          brushMode !== 'none' ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing'
-                        }`}
-                      />
-                    </div>
-
-                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 bg-white/90 dark:bg-slate-900/90 px-3.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
-                      {brushMode === 'keep'
-                        ? 'Brush active: Paint over face/hair to keep protected'
-                        : brushMode === 'erase'
-                        ? 'Eraser active: Paint over leftover background spots'
-                        : 'Drag preview to pan • Use Crop & Backdrop tabs for touch-ups'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+            <span className="text-[11px] text-slate-400">
+              মাউস দিয়ে ড্র্যাগ করে ফেস সেন্টারিং করুন • হুইল স্ক্রল করে জুম করুন
+            </span>
+          </div>
+        </main>
       </div>
+
+      {/* 10-in-1 Passport Sheet Generator Modal */}
+      {showSheetModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in photo-sheet-print-container">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden no-print">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <span className="p-2.5 rounded-xl bg-emerald-500 text-white">
+                  <Grid className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    ১০-কপি পাসপোর্ট প্রিন্ট শিট জেনারেটর (স্টুডিও পেপার গ্রিড)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    স্ট্যান্ডার্ড 4R (4"×6") ফটো পেপার বা A4 পেপারে এক ক্লিকে পাসপোর্ট ছবি সাজিয়ে সরাসরি প্রিন্ট করুন
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSheetModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="py-4 flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
+              {/* Settings Column */}
+              <div className="w-full md:w-80 space-y-4 text-xs overflow-y-auto pr-1">
+                <div>
+                  <label className="font-bold text-slate-800 dark:text-slate-200 block mb-2">
+                    শিট লেআউট ও সাইজ
+                  </label>
+                  <div className="space-y-1.5">
+                    {SHEET_LAYOUTS.map((layout) => (
+                      <button
+                        key={layout.id}
+                        onClick={() => setSelectedSheetLayout(layout.id)}
+                        className={`w-full p-2.5 rounded-xl border text-left transition-all ${
+                          selectedSheetLayout === layout.id
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 font-bold'
+                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span>{layout.label}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400">{layout.paper}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                    কাটিং ও মার্জিন কন্ট্রোল
+                  </span>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showCutGuides}
+                      onChange={(e) => setShowCutGuides(e.target.checked)}
+                      className="rounded accent-emerald-600 w-4 h-4"
+                    />
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      কাটিং গাইডলাইন (ড্যাশ বর্ডার লাইন)
+                    </span>
+                  </label>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                      <span>ছবির মাঝের ফাঁকা স্পেস</span>
+                      <span>{sheetSpacing} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="4"
+                      max="40"
+                      value={sheetSpacing}
+                      onChange={(e) => setSheetSpacing(parseInt(e.target.value))}
+                      className="w-full accent-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1">
+                      <span>কাগজের বর্ডার মার্জিন</span>
+                      <span>{sheetMargin} px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="15"
+                      max="80"
+                      value={sheetMargin}
+                      onChange={(e) => setSheetMargin(parseInt(e.target.value))}
+                      className="w-full accent-emerald-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Sheet Visual Preview Stage */}
+              <div className="flex-1 bg-slate-100 dark:bg-slate-950 rounded-2xl p-4 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-800">
+                {isGeneratingSheet ? (
+                  <div className="text-center">
+                    <Sparkles className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">শিট প্রস্তুত হচ্ছে...</p>
+                  </div>
+                ) : sheetPreviewUrl ? (
+                  <img
+                    src={sheetPreviewUrl}
+                    alt="Passport Sheet Preview"
+                    className="max-h-[50vh] max-w-full rounded-lg shadow-xl border border-slate-300 object-contain photo-sheet-print-target"
+                  />
+                ) : null}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                প্রিন্ট করার সময় পেপার সাইজ <strong>4"×6" (4R)</strong> নির্বাচন করুন
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowSheetModal(false)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                >
+                  বন্ধ করুন
+                </button>
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.download = `SebaDesk_Passport_Sheet_${selectedSheetLayout}_${Date.now()}.jpg`;
+                    link.href = sheetPreviewUrl;
+                    link.click();
+                  }}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-200 flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>শিট ইমেজ ডাউনলোড</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md flex items-center gap-1.5"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>সরাসরি প্রিন্ট দিন (Print Sheet)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Smart Photo Lab Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white shadow-sm">
+                  <Bot className="w-5 h-5" />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    AI স্মার্ট ফটো ল্যাব (প্রম্পট এডিটর)
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    বাংলা বা ইংরেজিতে লিখুন আপনার ছবিকে ঠিক কেমন এডিট করতে চান
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Natural Language Prompt Input */}
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                  আপনার কাস্টম এডিটিং নির্দেশ দিন:
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAiExecutePrompt()}
+                    placeholder="যেমন: ব্যাকগ্রাউন্ড সাদা করো, ফেস উজ্জ্বল ও ক্লিয়ার করো, ফর্মাল লুক দাও..."
+                    className="w-full pl-3.5 pr-24 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                  <button
+                    onClick={handleAiExecutePrompt}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg flex items-center gap-1 shadow-sm"
+                  >
+                    <span>প্রয়োগ করুন</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Execution Feedback Banner */}
+              {aiExecutionStatus && (
+                <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 text-violet-800 dark:text-violet-300 font-medium">
+                  {aiExecutionStatus}
+                </div>
+              )}
+
+              {/* Quick AI Presets */}
+              <div>
+                <span className="font-bold text-slate-800 dark:text-slate-200 block mb-2">
+                  ১-ক্লিক জনপ্রিয় এআই প্রিসেটসমূহ:
+                </span>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {AI_QUICK_PRESETS.map((p, i) => (
+                    <div
+                      key={i}
+                      onClick={() => applyAiPreset(p)}
+                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-violet-400 dark:hover:border-violet-600 hover:bg-violet-50/40 dark:hover:bg-violet-950/20 cursor-pointer transition-all flex items-start justify-between gap-3"
+                    >
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white">{p.title}</h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{p.summary}</p>
+                      </div>
+                      <span className="px-2 py-1 rounded bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 font-semibold text-[10px] whitespace-nowrap">
+                        প্রয়োগ ➔
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="px-5 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white"
+              >
+                সম্পন্ন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
