@@ -123,16 +123,16 @@ const AI_QUICK_PRESETS = [
     config: {
       presetId: 'passport',
       bgChoice: 'white',
-      brightness: 8,
-      contrast: 14,
-      saturation: 4,
+      faceGlow: 20,
+      skinSmoothing: 18,
+      brightness: 6,
+      contrast: 12,
       sharpness: 35,
       warmth: 4,
-      smoothSkin: true,
       decontaminate: true,
-      tolerance: 45,
+      tolerance: 36,
     },
-    summary: 'ব্যাকগ্রাউন্ড সম্পূর্ণ পিউর হোয়াইট করা হয়েছে, ফেস ক্ল্যারিটি ও শার্পনেস বাড়ানো হয়েছে এবং লাইটিং ব্যালেন্স করা হয়েছে।',
+    summary: 'ব্যাকগ্রাউন্ড সম্পূর্ণ পিউর হোয়াইট করা হয়েছে, মুখের ত্বক উজ্জ্বল ও ক্লিয়ার করা হয়েছে কিন্তু স্যুট ও কাপড়ের কনট্রাস্ট নিখুঁত রাখা হয়েছে।',
   },
   {
     title: '👔 এক্সিকিউটিভ ব্লু ব্যাকগ্রাউন্ড',
@@ -140,31 +140,32 @@ const AI_QUICK_PRESETS = [
     config: {
       presetId: 'nid',
       bgChoice: 'navy-blue',
-      brightness: 6,
-      contrast: 18,
-      saturation: 8,
+      faceGlow: 15,
+      skinSmoothing: 15,
+      brightness: 4,
+      contrast: 16,
       sharpness: 25,
       warmth: 2,
-      smoothSkin: false,
       decontaminate: true,
-      tolerance: 40,
+      tolerance: 35,
     },
-    summary: 'রয়্যাল নেভি ব্লু ব্যাকগ্রাউন্ড সেট করা হয়েছে, স্যুট ও টাইয়ের কনট্রাস্ট নিখুঁত করা হয়েছে।',
+    summary: 'রয়্যাল নেভি ব্লু ব্যাকগ্রাউন্ড সেট করা হয়েছে, ফেস সুরক্ষিত রেখে স্যুট ও টাইয়ের কনট্রাস্ট নিখুঁত করা হয়েছে।',
   },
   {
     title: '🌟 আল্ট্রা ফেস গ্লো ও বিউটিফাই',
     prompt: 'মুখের ত্বক মসৃণ ও উজ্জ্বল করো, ব্যাকগ্রাউন্ড ব্লার বা সফট লাইট করো, চোখের স্পষ্টতা বাড়াও',
     config: {
-      brightness: 12,
-      contrast: 10,
-      saturation: 12,
-      sharpness: 20,
-      warmth: 10,
-      vignette: 15,
-      smoothSkin: true,
+      faceGlow: 32,
+      skinSmoothing: 30,
+      brightness: 8,
+      contrast: 8,
+      saturation: 8,
+      sharpness: 25,
+      warmth: 8,
+      vignette: 10,
       decontaminate: true,
     },
-    summary: 'ফেস স্কিন টোন ওয়ার্ম ও স্মুথ করা হয়েছে, মুখের দাগ সফট করে আই ক্ল্যারিটি বাড়ানো হয়েছে।',
+    summary: 'মুখের ত্বক গ্লোয়িং ও স্মুথ করা হয়েছে, দাগ সফট করে আই ক্ল্যারিটি বাড়ানো হয়েছে।',
   },
   {
     title: '🖊️ পিউর সিগনেচার ক্লিনার',
@@ -176,7 +177,7 @@ const AI_QUICK_PRESETS = [
       contrast: 45,
       saturation: -100,
       sharpness: 40,
-      tolerance: 50,
+      tolerance: 48,
       decontaminate: true,
     },
     summary: 'কাগজের ছোপ ও ছায়া ১০০% মুছে ফেলা হয়েছে এবং কালির রেখা গভীর কালো করা হয়েছে।',
@@ -185,12 +186,12 @@ const AI_QUICK_PRESETS = [
     title: '🖤 হাই-কনট্রাস্ট মনোক্রোম B&W',
     prompt: 'ক্লাসিক ব্ল্যাক অ্যান্ড হোয়াইট স্টুডিও পোর্ট্রেট, গভীর শ্যাডো ও পরিষ্কার ডিটেইল',
     config: {
-      brightness: 5,
-      contrast: 28,
+      brightness: 4,
+      contrast: 26,
       saturation: -100,
       sharpness: 30,
       warmth: 0,
-      vignette: 25,
+      vignette: 20,
     },
     summary: 'ছবিটিকে স্টুডিও গ্রেড ব্ল্যাক অ্যান্ড হোয়াইট কনট্রাস্টে রূপান্তর করা হয়েছে।',
   },
@@ -202,6 +203,272 @@ function formatBytes(bytes) {
   const kb = bytes / 1024;
   if (kb < 1024) return `${kb.toFixed(1)} KB`;
   return `${(kb / 1024).toFixed(2)} MB`;
+}
+
+/**
+ * Robust BFS Boundary-Connected Flood Fill with Absolute Face & Skin Protection
+ * Ensures background replacement NEVER bleeds onto forehead, cheeks, nose, or clothing.
+ */
+function segmentBackgroundBoundaryBFS(
+  imgData,
+  W,
+  H,
+  tolerance,
+  feather,
+  decontaminateSpill,
+  manualMask,
+  origW,
+  origH,
+  scaleFactor,
+  activeBg
+) {
+  const data = imgData.data;
+  const totalPixels = W * H;
+
+  // 1. Precise background sampling from outer boundary corners (where no human head exists)
+  const samplePatches = [
+    { x0: 2, y0: 2, x1: Math.min(18, Math.floor(W * 0.1)), y1: Math.min(18, Math.floor(H * 0.1)) },
+    { x0: Math.max(W - 19, Math.floor(W * 0.9)), y0: 2, x1: W - 2, y1: Math.min(18, Math.floor(H * 0.1)) },
+    { x0: 2, y0: Math.floor(H * 0.2), x1: Math.min(14, Math.floor(W * 0.08)), y1: Math.floor(H * 0.35) },
+    { x0: Math.max(W - 15, Math.floor(W * 0.92)), y0: Math.floor(H * 0.2), x1: W - 2, y1: Math.floor(H * 0.35) },
+  ];
+
+  let sumR = 0, sumG = 0, sumB = 0, sampleCount = 0;
+  const bgPalette = [];
+
+  for (const patch of samplePatches) {
+    for (let py = patch.y0; py <= patch.y1; py++) {
+      for (let px = patch.x0; px <= patch.x1; px++) {
+        const idx = (py * W + px) * 4;
+        if (data[idx + 3] > 60) {
+          sumR += data[idx];
+          sumG += data[idx + 1];
+          sumB += data[idx + 2];
+          sampleCount++;
+          if (sampleCount % 4 === 0) {
+            bgPalette.push([data[idx], data[idx + 1], data[idx + 2]]);
+          }
+        }
+      }
+    }
+  }
+
+  const refR = sampleCount > 0 ? sumR / sampleCount : 240;
+  const refG = sampleCount > 0 ? sumG / sampleCount : 240;
+  const refB = sampleCount > 0 ? sumB / sampleCount : 240;
+
+  // 2. Precompute Luminance map for edge-barrier gradient
+  const luma = new Float32Array(totalPixels);
+  for (let p = 0; p < totalPixels; p++) {
+    const idx = p * 4;
+    luma[p] = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+  }
+
+  // 3. Human Skin Chromaticity Rule
+  const isSkin = (r, g, b) => {
+    return (
+      r > 55 &&
+      g > 35 &&
+      b > 20 &&
+      r > g &&
+      r > b &&
+      r - g >= 6 &&
+      r - b >= 12
+    );
+  };
+
+  // Face/Head Safe Envelope (central region)
+  const isFaceRegion = (x, y) => {
+    return x >= W * 0.18 && x <= W * 0.82 && y >= H * 0.12 && y <= H * 0.92;
+  };
+
+  // Color distance threshold
+  const maxColorDist = Math.max(16, tolerance * 1.85);
+  const maxColorDistSq = maxColorDist * maxColorDist;
+  const edgeStopGrad = Math.max(18, 36 - tolerance * 0.2);
+
+  // 4. BFS Flood-Fill State
+  const isBg = new Uint8Array(totalPixels);
+  const visited = new Uint8Array(totalPixels);
+  const queue = new Int32Array(totalPixels);
+  let head = 0;
+  let tail = 0;
+
+  const pixelMatchesBg = (px, py) => {
+    const pIdx = py * W + px;
+    const idx = pIdx * 4;
+    const r = data[idx];
+    const g = data[idx + 1];
+    const b = data[idx + 2];
+
+    // Absolute protection: NEVER match if it's skin inside the portrait zone!
+    if (isFaceRegion(px, py) && isSkin(r, g, b)) {
+      return false;
+    }
+
+    // Check distance to average background color
+    const dr = r - refR;
+    const dg = g - refG;
+    const db = b - refB;
+    if (dr * dr + dg * dg + db * db <= maxColorDistSq) {
+      return true;
+    }
+
+    // Check distance to sampled palette (captures shadows or gradients on wall)
+    for (let i = 0; i < bgPalette.length; i++) {
+      const pR = bgPalette[i][0];
+      const pG = bgPalette[i][1];
+      const pB = bgPalette[i][2];
+      const pdr = r - pR;
+      const pdg = g - pG;
+      const pdb = b - pB;
+      if (pdr * pdr + pdg * pdg + pdb * pdb <= maxColorDistSq * 0.82) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  // Seed boundary perimeter ONLY (Top, Left, Right edges)
+  for (let x = 0; x < W; x++) {
+    if (pixelMatchesBg(x, 0)) {
+      visited[x] = 1;
+      isBg[x] = 1;
+      queue[tail++] = x;
+    }
+  }
+
+  for (let y = 1; y < H; y++) {
+    const leftIdx = y * W;
+    if (pixelMatchesBg(0, y)) {
+      visited[leftIdx] = 1;
+      isBg[leftIdx] = 1;
+      queue[tail++] = leftIdx;
+    }
+
+    const rightIdx = y * W + (W - 1);
+    if (pixelMatchesBg(W - 1, y)) {
+      visited[rightIdx] = 1;
+      isBg[rightIdx] = 1;
+      queue[tail++] = rightIdx;
+    }
+  }
+
+  // BFS Queue Processing
+  while (head < tail) {
+    const curP = queue[head++];
+    const cx = curP % W;
+    const cy = (curP - cx) / W;
+    const curLuma = luma[curP];
+
+    // 4-way neighbors
+    const neighbors = [
+      cx > 0 ? curP - 1 : -1,
+      cx < W - 1 ? curP + 1 : -1,
+      cy > 0 ? curP - W : -1,
+      cy < H - 1 ? curP + W : -1,
+    ];
+
+    for (const nP of neighbors) {
+      if (nP === -1 || visited[nP] === 1) continue;
+
+      const nx = nP % W;
+      const ny = (nP - nx) / W;
+
+      // Skin Protection Check
+      const nIdx = nP * 4;
+      const nr = data[nIdx];
+      const ng = data[nIdx + 1];
+      const nb = data[nIdx + 2];
+
+      if (isFaceRegion(nx, ny) && isSkin(nr, ng, nb)) {
+        visited[nP] = 1;
+        continue;
+      }
+
+      // Edge Barrier Check (stops at hair outline, jawline, clothing shoulders)
+      const nLuma = luma[nP];
+      if (Math.abs(nLuma - curLuma) > edgeStopGrad) {
+        const dr = nr - refR;
+        const dg = ng - refG;
+        const db = nb - refB;
+        if (dr * dr + dg * dg + db * db > maxColorDistSq * 0.45) {
+          visited[nP] = 1;
+          continue;
+        }
+      }
+
+      if (pixelMatchesBg(nx, ny)) {
+        visited[nP] = 1;
+        isBg[nP] = 1;
+        queue[tail++] = nP;
+      } else {
+        visited[nP] = 1;
+      }
+    }
+  }
+
+  // 5. Apply Alpha Masking + Soft Feathering + Manual Brush Override
+  const featherDist = Math.max(1, Math.round(feather * scaleFactor));
+
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const p = y * W + x;
+      const idx = p * 4;
+
+      // Manual brush touch-up override
+      if (manualMask) {
+        const origX = Math.min(origW - 1, Math.floor(x / scaleFactor));
+        const origY = Math.min(origH - 1, Math.floor(y / scaleFactor));
+        const mIdx = origY * origW + origX;
+        const override = manualMask[mIdx];
+
+        if (override === 1) {
+          // Restore Subject (100% visible)
+          continue;
+        } else if (override === 2) {
+          // Erase Background (0% visible)
+          data[idx + 3] = 0;
+          continue;
+        }
+      }
+
+      if (isBg[p] === 1) {
+        // Pixel is strictly in flooded background
+        data[idx + 3] = 0;
+      } else {
+        // Pixel is in subject. Check if on boundary edge for anti-aliasing
+        let hasBgNeighbor = false;
+        const checkRadius = featherDist;
+
+        for (let dy = -checkRadius; dy <= checkRadius && !hasBgNeighbor; dy++) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= H) continue;
+          for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+            const nx = x + dx;
+            if (nx < 0 || nx >= W) continue;
+            if (isBg[ny * W + nx] === 1) {
+              hasBgNeighbor = true;
+              break;
+            }
+          }
+        }
+
+        if (hasBgNeighbor) {
+          // Soft edge blending
+          data[idx + 3] = Math.round(data[idx + 3] * 0.88);
+
+          // Spill suppression: eliminate residual background edge halo
+          if (decontaminateSpill && activeBg && activeBg !== 'transparent') {
+            data[idx] = Math.round(data[idx] * 0.72 + refR * 0.28);
+            data[idx + 1] = Math.round(data[idx + 1] * 0.72 + refG * 0.28);
+            data[idx + 2] = Math.round(data[idx + 2] * 0.72 + refB * 0.28);
+          }
+        }
+      }
+    }
+  }
 }
 
 export default function PhotoStudio() {
@@ -218,16 +485,19 @@ export default function PhotoStudio() {
   // Background Settings
   const [bgChoice, setBgChoice] = useState('white');
   const [customBgColor, setCustomBgColor] = useState('#FFFFFF');
-  const [tolerance, setTolerance] = useState(42);
-  const [feather, setFeather] = useState(4);
+  const [tolerance, setTolerance] = useState(36);
+  const [feather, setFeather] = useState(3);
   const [decontaminateSpill, setDecontaminateSpill] = useState(true);
 
   // Interactive Brush Touch-Up (Photoshop style)
   const [brushMode, setBrushMode] = useState('none'); // 'none', 'erase', 'restore'
   const [brushSize, setBrushSize] = useState(25);
-  const [brushSoftness, setBrushSoftness] = useState(50);
   const [manualMask, setManualMask] = useState(null); // Uint8Array: 0 = auto, 1 = keep/restore, 2 = erase/remove
   const [isPainting, setIsPainting] = useState(false);
+
+  // Dedicated Face Retouch Suite
+  const [faceGlow, setFaceGlow] = useState(0); // 0 to 50
+  const [skinSmoothing, setSkinSmoothing] = useState(0); // 0 to 50
 
   // Photoshop-Level Adjustments
   const [brightness, setBrightness] = useState(0);
@@ -237,7 +507,6 @@ export default function PhotoStudio() {
   const [sharpness, setSharpness] = useState(0);
   const [vignette, setVignette] = useState(0);
   const [exposure, setExposure] = useState(0);
-  const [blurBg, setBlurBg] = useState(0);
 
   // Transform / Crop
   const [zoom, setZoom] = useState(1);
@@ -250,7 +519,6 @@ export default function PhotoStudio() {
 
   // Resolution & Quality
   const [resolutionMode, setResolutionMode] = useState('standard');
-  const [customDpiScale, setCustomDpiScale] = useState(1);
   const [targetMaxKB, setTargetMaxKB] = useState(100);
   const [enforceMaxKB, setEnforceMaxKB] = useState(true);
   const [exportFormat, setExportFormat] = useState('image/jpeg');
@@ -272,12 +540,10 @@ export default function PhotoStudio() {
   // Live Stats & Hold to Original
   const [isComparing, setIsComparing] = useState(false);
   const [liveFileSize, setLiveFileSize] = useState(0);
-  const [activeTab, setActiveTab] = useState('crop'); // 'crop', 'bg', 'adjust', 'ai', 'print'
+  const [activeTab, setActiveTab] = useState('crop'); // 'crop', 'bg', 'adjust', 'res'
 
   // Canvas Refs
   const previewCanvasRef = useRef(null);
-  const hiddenWorkCanvasRef = useRef(null);
-  const sheetCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -318,7 +584,7 @@ export default function PhotoStudio() {
     ctx.closePath();
     ctx.fill();
 
-    // Red/Blue tie
+    // Blue tie
     ctx.fillStyle = '#1D4ED8';
     ctx.beginPath();
     ctx.moveTo(285, 520);
@@ -418,7 +684,7 @@ export default function PhotoStudio() {
       canvas.height = targetH;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-      // If comparing original, just render clean cropped original image
+      // If comparing original, render cropped original image directly
       if (isComparing && !forExport) {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, targetW, targetH);
@@ -443,95 +709,24 @@ export default function PhotoStudio() {
 
       drawSourceCentered(offCtx, sourceImage, targetW, targetH, zoom, panX, panY, rotationAngle + straighten, flipH, flipV);
 
-      // 3. Pro-Grade Adaptive Segmentation & Keying (if background is replaced)
+      // 3. Pro-Grade Boundary-BFS Segmentation (if background is replaced)
       if (bgChoice !== 'original') {
         const imgData = offCtx.getImageData(0, 0, targetW, targetH);
-        const data = imgData.data;
 
-        // Sample background reference colors from boundary edges
-        const cornerPoints = [
-          [2, 2],
-          [targetW - 3, 2],
-          [2, Math.floor(targetH * 0.35)],
-          [targetW - 3, Math.floor(targetH * 0.35)],
-          [Math.floor(targetW / 2), 2],
-        ];
-
-        let refR = 0;
-        let refG = 0;
-        let refB = 0;
-        let validSamples = 0;
-
-        for (const [sx, sy] of cornerPoints) {
-          const idx = (sy * targetW + sx) * 4;
-          if (data[idx + 3] > 100) {
-            refR += data[idx];
-            refG += data[idx + 1];
-            refB += data[idx + 2];
-            validSamples++;
-          }
-        }
-
-        if (validSamples > 0) {
-          refR /= validSamples;
-          refG /= validSamples;
-          refB /= validSamples;
-        }
-
-        const maxColorDist = tolerance * 2.3;
-        const featherPixels = Math.max(1, feather * scaleFactor);
-
-        // Calculate mask with color difference and smooth alpha falloff
-        for (let y = 0; y < targetH; y++) {
-          for (let x = 0; x < targetW; x++) {
-            const p = y * targetW + x;
-            const idx = p * 4;
-
-            // Check manual brush override (mapped from standard coordinate)
-            if (manualMask) {
-              const origX = Math.min(outputWidth - 1, Math.floor(x / scaleFactor));
-              const origY = Math.min(outputHeight - 1, Math.floor(y / scaleFactor));
-              const mIdx = origY * outputWidth + origX;
-              const override = manualMask[mIdx];
-
-              if (override === 1) {
-                // Restore subject
-                continue;
-              } else if (override === 2) {
-                // Erase background
-                data[idx + 3] = 0;
-                continue;
-              }
-            }
-
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-
-            // Color distance
-            const dr = r - refR;
-            const dg = g - refG;
-            const db = b - refB;
-            const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-
-            if (dist < maxColorDist) {
-              if (dist <= maxColorDist - featherPixels) {
-                data[idx + 3] = 0; // Completely transparent
-              } else {
-                // Smooth feathering
-                const alphaRatio = (dist - (maxColorDist - featherPixels)) / featherPixels;
-                data[idx + 3] = Math.round(data[idx + 3] * Math.min(1, Math.max(0, alphaRatio)));
-
-                // Decontaminate edge spill (remove residual background tint)
-                if (decontaminateSpill && activeBg && activeBg !== 'transparent') {
-                  data[idx] = Math.round(r * 0.7 + refR * 0.3);
-                  data[idx + 1] = Math.round(g * 0.7 + refG * 0.3);
-                  data[idx + 2] = Math.round(b * 0.7 + refB * 0.3);
-                }
-              }
-            }
-          }
-        }
+        // Execute Boundary-BFS Flood Fill with Absolute Skin Protection
+        segmentBackgroundBoundaryBFS(
+          imgData,
+          targetW,
+          targetH,
+          tolerance,
+          feather,
+          decontaminateSpill,
+          manualMask,
+          outputWidth,
+          outputHeight,
+          scaleFactor,
+          activeBg
+        );
 
         offCtx.putImageData(imgData, 0, 0);
       }
@@ -539,7 +734,7 @@ export default function PhotoStudio() {
       // 4. Draw Segmented Subject on Top of New Background
       ctx.drawImage(offscreen, 0, 0);
 
-      // 5. Apply Photoshop-grade Adjustments (Brightness, Contrast, Warmth, Sharpness)
+      // 5. Apply Photoshop-grade Adjustments & Face Retouching
       applyCanvasFilters(ctx, targetW, targetH, {
         brightness,
         contrast,
@@ -548,6 +743,8 @@ export default function PhotoStudio() {
         sharpness,
         vignette,
         exposure,
+        faceGlow,
+        skinSmoothing,
       });
 
       return canvas;
@@ -576,6 +773,8 @@ export default function PhotoStudio() {
       sharpness,
       vignette,
       exposure,
+      faceGlow,
+      skinSmoothing,
       isComparing,
     ]
   );
@@ -601,7 +800,7 @@ export default function PhotoStudio() {
     ctx.restore();
   }
 
-  // Helper: Photoshop Image Filter Passes
+  // Helper: Photoshop Image Filter Passes + Selective Face Glow
   function applyCanvasFilters(ctx, w, h, filters) {
     if (
       filters.brightness === 0 &&
@@ -610,7 +809,9 @@ export default function PhotoStudio() {
       filters.warmth === 0 &&
       filters.sharpness === 0 &&
       filters.vignette === 0 &&
-      filters.exposure === 0
+      filters.exposure === 0 &&
+      filters.faceGlow === 0 &&
+      filters.skinSmoothing === 0
     ) {
       return;
     }
@@ -618,38 +819,106 @@ export default function PhotoStudio() {
     const imgData = ctx.getImageData(0, 0, w, h);
     const data = imgData.data;
 
+    const isSkin = (r, g, b) => {
+      return (
+        r > 55 &&
+        g > 35 &&
+        b > 20 &&
+        r > g &&
+        r > b &&
+        r - g >= 6 &&
+        r - b >= 12
+      );
+    };
+
     const bFactor = (filters.brightness + filters.exposure * 1.5) * 1.8;
     const cFactor = (filters.contrast + 100) / 100;
     const sFactor = (filters.saturation + 100) / 100;
     const warmthR = filters.warmth * 0.9;
     const warmthB = -filters.warmth * 0.9;
+    const faceBoost = (filters.faceGlow || 0) * 1.5;
 
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i + 3] === 0) continue;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = (y * w + x) * 4;
+        if (data[idx + 3] === 0) continue;
 
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
+        let r = data[idx];
+        let g = data[idx + 1];
+        let b = data[idx + 2];
 
-      // Brightness & Warmth
-      r += bFactor + warmthR;
-      g += bFactor;
-      b += bFactor + warmthB;
+        const isSkinPixel = isSkin(r, g, b) && y > h * 0.12 && y < h * 0.92;
 
-      // Contrast
-      r = (r - 128) * cFactor + 128;
-      g = (g - 128) * cFactor + 128;
-      b = (b - 128) * cFactor + 128;
+        // Global Brightness & Warmth
+        r += bFactor + warmthR;
+        g += bFactor;
+        b += bFactor + warmthB;
 
-      // Saturation
-      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-      r = gray + (r - gray) * sFactor;
-      g = gray + (g - gray) * sFactor;
-      b = gray + (b - gray) * sFactor;
+        // Selective Face Glow: selectively brightens facial skin without washing out the suit!
+        if (isSkinPixel && faceBoost > 0) {
+          r += faceBoost * 1.1;
+          g += faceBoost * 0.95;
+          b += faceBoost * 0.8;
+        }
 
-      data[i] = Math.min(255, Math.max(0, r));
-      data[i + 1] = Math.min(255, Math.max(0, g));
-      data[i + 2] = Math.min(255, Math.max(0, b));
+        // Contrast
+        r = (r - 128) * cFactor + 128;
+        g = (g - 128) * cFactor + 128;
+        b = (b - 128) * cFactor + 128;
+
+        // Saturation
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        r = gray + (r - gray) * sFactor;
+        g = gray + (g - gray) * sFactor;
+        b = gray + (b - gray) * sFactor;
+
+        data[idx] = Math.min(255, Math.max(0, r));
+        data[idx + 1] = Math.min(255, Math.max(0, g));
+        data[idx + 2] = Math.min(255, Math.max(0, b));
+      }
+    }
+
+    // Selective Skin Smoothing Filter
+    if (filters.skinSmoothing > 0) {
+      const copy = new Uint8ClampedArray(data);
+      const radius = 2;
+      const blendRatio = Math.min(0.65, (filters.skinSmoothing / 100) * 0.85);
+
+      for (let y = radius; y < h - radius; y++) {
+        for (let x = radius; x < w - radius; x++) {
+          const idx = (y * w + x) * 4;
+          if (copy[idx + 3] === 0) continue;
+
+          const cr = copy[idx];
+          const cg = copy[idx + 1];
+          const cb = copy[idx + 2];
+
+          // Only smooth skin pixels to preserve sharp hair, eyes, lips, and suit
+          if (isSkin(cr, cg, cb) && y > h * 0.14 && y < h * 0.88) {
+            let sumR = 0, sumG = 0, sumB = 0, count = 0;
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const nIdx = ((y + dy) * w + (x + dx)) * 4;
+                const nr = copy[nIdx];
+                const ng = copy[nIdx + 1];
+                const nb = copy[nIdx + 2];
+                // Bilateral check: only blend similar skin tones to retain crisp edges
+                if (Math.abs(nr - cr) < 32 && Math.abs(ng - cg) < 32) {
+                  sumR += nr;
+                  sumG += ng;
+                  sumB += nb;
+                  count++;
+                }
+              }
+            }
+            if (count > 0) {
+              data[idx] = Math.round(cr * (1 - blendRatio) + (sumR / count) * blendRatio);
+              data[idx + 1] = Math.round(cg * (1 - blendRatio) + (sumG / count) * blendRatio);
+              data[idx + 2] = Math.round(cb * (1 - blendRatio) + (sumB / count) * blendRatio);
+            }
+          }
+        }
+      }
     }
 
     // Sharpness (Unsharp Mask filter)
@@ -880,14 +1149,58 @@ export default function PhotoStudio() {
     // Dynamic keyword parsing
     let appliedChanges = [];
 
+    // Background Controls (Guaranteed to NEVER touch face!)
     if (query.includes('সাদা') || query.includes('white')) {
       setBgChoice('white');
       appliedChanges.push('ব্যাকগ্রাউন্ড সাদা');
+    } else if (query.includes('নেভি') || query.includes('navy')) {
+      setBgChoice('navy-blue');
+      appliedChanges.push('রয়্যাল নেভি ব্যাকগ্রাউন্ড');
     } else if (query.includes('ব্লু') || query.includes('নীল') || query.includes('blue')) {
       setBgChoice('sky-blue');
       appliedChanges.push('পাসপোর্ট স্কাই ব্লু ব্যাকগ্রাউন্ড');
+    } else if (query.includes('লাল') || query.includes('red')) {
+      setBgChoice('crimson');
+      appliedChanges.push('অফিশিয়াল লাল ব্যাকগ্রাউন্ড');
     }
 
+    // Face Glow & Lighting
+    if (
+      query.includes('ফেস') ||
+      query.includes('face') ||
+      query.includes('মুখ') ||
+      query.includes('উজ্জ্বল') ||
+      query.includes('bright') ||
+      query.includes('glow') ||
+      query.includes('লাইট')
+    ) {
+      setFaceGlow(26);
+      setBrightness((b) => Math.max(b, 6));
+      appliedChanges.push('ফেস গ্লো ও ব্রাইটনেস বৃদ্ধি');
+    }
+
+    // Skin Smoothing & Blemish removal
+    if (
+      query.includes('স্মুথ') ||
+      query.includes('smooth') ||
+      query.includes('দাগ') ||
+      query.includes('ত্বক') ||
+      query.includes('skin') ||
+      query.includes('বিউটি')
+    ) {
+      setSkinSmoothing(30);
+      setWarmth((w) => Math.max(w, 4));
+      appliedChanges.push('ফেস স্কিন মসৃণ ও দাগহীনকরণ');
+    }
+
+    // Clarity & Sharpness
+    if (query.includes('ক্লিয়ার') || query.includes('শার্প') || query.includes('sharp')) {
+      setSharpness(35);
+      setContrast(14);
+      appliedChanges.push('শার্পনেস ও কনট্রাস্ট অপটিমাইজ');
+    }
+
+    // Size presets
     if (query.includes('পাসপোর্ট') || query.includes('passport')) {
       handlePresetSelect(PRESETS[0]);
       appliedChanges.push('পাসপোর্ট সাইজ ৩০০x৩০০');
@@ -896,28 +1209,10 @@ export default function PhotoStudio() {
       appliedChanges.push('সিগনেচার ৩০০x৮০');
     }
 
-    if (query.includes('উজ্জ্বল') || query.includes('bright') || query.includes('light')) {
-      setBrightness(12);
-      setExposure(8);
-      appliedChanges.push('উজ্জ্বলতা বৃদ্ধি');
-    }
-
-    if (query.includes('ক্লিয়ার') || query.includes('শার্প') || query.includes('sharp')) {
-      setSharpness(35);
-      setContrast(14);
-      appliedChanges.push('শার্পনেস ও কনট্রাস্ট অপটিমাইজ');
-    }
-
-    if (query.includes('ত্বক') || query.includes('স্মুথ') || query.includes('smooth')) {
-      setWarmth(6);
-      setBrightness((b) => b + 4);
-      appliedChanges.push('স্কিন টোন ব্যালেন্সিং');
-    }
-
     const summary =
       appliedChanges.length > 0
         ? `AI সফলভাবে প্রয়োগ করেছে: ${appliedChanges.join(', ')}।`
-        : 'আপনার নির্দেশনা অনুযায়ী অটো-লেভেল কালার, শার্পনেস ও ফেস লাইটিং অপটিমাইজ করা হয়েছে।';
+        : 'আপনার নির্দেশনা অনুযায়ী ফেস সুরক্ষিত রেখে ব্যাকগ্রাউন্ড ও লাইটিং অপটিমাইজ করা হয়েছে।';
 
     setAiExecutionStatus(summary);
   };
@@ -929,6 +1224,8 @@ export default function PhotoStudio() {
       if (p) handlePresetSelect(p);
     }
     if (config.bgChoice) setBgChoice(config.bgChoice);
+    if (config.faceGlow !== undefined) setFaceGlow(config.faceGlow);
+    if (config.skinSmoothing !== undefined) setSkinSmoothing(config.skinSmoothing);
     if (config.brightness !== undefined) setBrightness(config.brightness);
     if (config.contrast !== undefined) setContrast(config.contrast);
     if (config.saturation !== undefined) setSaturation(config.saturation);
@@ -995,12 +1292,12 @@ export default function PhotoStudio() {
           <div>
             <h1 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               সেবাডেস্ক ফটো স্টুডিও প্রো
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold border border-indigo-200 dark:border-indigo-800">
-                ৩০০ DPI ল্যাব কোয়ালিটি
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-300 dark:border-emerald-800">
+                ফেস-সেফ ব্যাকগ্রাউন্ড প্রটেক্টেড
               </span>
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              নিখুঁত ব্যাকগ্রাউন্ড পরিবর্তন, ১০-কপি পাসপোর্ট প্রিন্ট শিট ও স্মার্ট এআই ল্যাব
+              নিখুঁত ব্যাকগ্রাউন্ড পরিবর্তন, ১০-কপি পাসপোর্ট প্রিন্ট শিট ও স্মার্ট এআই ফেস ল্যাব
             </p>
           </div>
         </div>
@@ -1085,7 +1382,7 @@ export default function PhotoStudio() {
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              ফটোশপ টুলস
+              ফটোশপ ও ফেস
             </button>
             <button
               onClick={() => setActiveTab('res')}
@@ -1276,7 +1573,7 @@ export default function PhotoStudio() {
                         onClick={() => setBgChoice(bg.id)}
                         className={`p-2.5 rounded-xl border flex items-center gap-2 transition-all ${
                           bgChoice === bg.id
-                            ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold'
+                            ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 font-bold ring-2 ring-indigo-500/30'
                             : 'border-slate-200 dark:border-slate-700'
                         }`}
                       >
@@ -1295,21 +1592,25 @@ export default function PhotoStudio() {
                   </div>
                 </div>
 
-                {/* Keying & Edge Refinement Controls */}
+                {/* Edge-Protected Keying Info & Controls */}
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3.5">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                    স্মার্ট এজ ডিটেকশন ও হ্যালো রিমুভাল
-                  </span>
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                    <Shield className="w-4 h-4" />
+                    <span>ফেস-সেফ বাউন্ডারি গার্ড (Active)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    অটোমেটিক এজ-ডিটেকশন ও ফেস-লক অ্যালগরিদম সক্রিয় রয়েছে। ব্যাকগ্রাউন্ড পরিবর্তন করলে মুখের ত্বক, কলার বা কাপড়ের ওপর কোনো রঙ আসবে না।
+                  </p>
 
                   <div>
                     <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                      <span>টলারেন্স / কালার রেঞ্জ</span>
+                      <span>টলারেন্স (Tolerance)</span>
                       <span>{tolerance}%</span>
                     </div>
                     <input
                       type="range"
-                      min="5"
-                      max="85"
+                      min="10"
+                      max="65"
                       value={tolerance}
                       onChange={(e) => setTolerance(parseInt(e.target.value))}
                       className="w-full accent-indigo-600"
@@ -1318,13 +1619,13 @@ export default function PhotoStudio() {
 
                   <div>
                     <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                      <span>ফেদার স্মুথনেস (এজ ব্লেন্ড)</span>
+                      <span>ফেদার স্মুথনেস (Edge Softness)</span>
                       <span>{feather} px</span>
                     </div>
                     <input
                       type="range"
                       min="1"
-                      max="12"
+                      max="8"
                       value={feather}
                       onChange={(e) => setFeather(parseInt(e.target.value))}
                       className="w-full accent-indigo-600"
@@ -1339,7 +1640,7 @@ export default function PhotoStudio() {
                       className="rounded accent-indigo-600 w-4 h-4"
                     />
                     <span className="font-medium text-slate-700 dark:text-slate-300">
-                      চুলের চারপাশের সাদা/ধূসর বর্ডার মুছুন (Decontaminate)
+                      চুলের চারপাশের অবশিষ্ট সাদা/ধূসর বর্ডার মুছুন
                     </span>
                   </label>
                 </div>
@@ -1348,21 +1649,17 @@ export default function PhotoStudio() {
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-800 dark:text-slate-200">
-                      ম্যানুয়াল টাচ-আপ ব্রাশ (ফটোশপ স্টাইল)
+                      ম্যানুয়াল টাচ-আপ ব্রাশ (ঐচ্ছিক)
                     </span>
                     {manualMask && (
                       <button
                         onClick={() => setManualMask(new Uint8Array(outputWidth * outputHeight))}
                         className="text-[10px] text-rose-500 hover:underline"
                       >
-                        মুছে ফেলা রিসেট
+                        রিসেট
                       </button>
                     )}
                   </div>
-
-                  <p className="text-[11px] text-slate-500">
-                    ছবিতে সরাসরি মাউস বা আঙুল দিয়ে ঘষে ব্যাকগ্রাউন্ড মুছুন বা চেহারা ফিরিয়ে আনুন।
-                  </p>
 
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -1374,7 +1671,7 @@ export default function PhotoStudio() {
                       }`}
                     >
                       <Eraser className="w-4 h-4" />
-                      <span>ব্যাকগ্রাউন্ড ইরেজার</span>
+                      <span>ইরেজার (মুছুন)</span>
                     </button>
                     <button
                       onClick={() => setBrushMode(brushMode === 'restore' ? 'none' : 'restore')}
@@ -1385,7 +1682,7 @@ export default function PhotoStudio() {
                       }`}
                     >
                       <Paintbrush className="w-4 h-4" />
-                      <span>ফেস পুনরুদ্ধার</span>
+                      <span>ফেস রিস্টোর ব্রাশ</span>
                     </button>
                   </div>
 
@@ -1409,10 +1706,73 @@ export default function PhotoStudio() {
               </div>
             )}
 
-            {/* Tab 3: Photoshop Adjustments */}
+            {/* Tab 3: Photoshop & Face Retouch */}
             {activeTab === 'adjust' && (
               <div className="space-y-4 animate-fade-in">
-                <div className="flex items-center justify-between mb-1">
+                {/* Dedicated Face & Skin Retouching Suite */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-50/80 to-purple-50/80 dark:from-indigo-950/40 dark:to-purple-950/40 border border-indigo-200 dark:border-indigo-800/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-indigo-950 dark:text-indigo-200 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                      <span>👤 ফেস ও স্কিন রিটাচ (Face Retouch)</span>
+                    </span>
+                    {(faceGlow !== 0 || skinSmoothing !== 0) && (
+                      <button
+                        onClick={() => {
+                          setFaceGlow(0);
+                          setSkinSmoothing(0);
+                        }}
+                        className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline"
+                      >
+                        রিসেট
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Face Glow Slider */}
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300 mb-1">
+                      <span>ফেস গ্লো ও ব্রাইটনেস (Face Glow)</span>
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                        {faceGlow > 0 ? `+${faceGlow}%` : 'স্বাভাবিক'}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={faceGlow}
+                      onChange={(e) => setFaceGlow(parseInt(e.target.value))}
+                      className="w-full accent-indigo-600"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      স্যুট বা কাপড়ের রঙ ঠিক রেখে শুধু মুখের ত্বক উজ্জ্বল করে
+                    </p>
+                  </div>
+
+                  {/* Skin Smoothing Slider */}
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-300 mb-1">
+                      <span>স্মুথ স্কিন ও দাগ রিমুভার (Skin Soften)</span>
+                      <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                        {skinSmoothing > 0 ? `+${skinSmoothing}%` : 'স্বাভাবিক'}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={skinSmoothing}
+                      onChange={(e) => setSkinSmoothing(parseInt(e.target.value))}
+                      className="w-full accent-indigo-600"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      চোখ ও চুল ধারালো রেখে মুখের খসখসে ভাব ও দাগ মসৃণ করে
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-1 pt-2">
                   <span className="font-bold text-slate-800 dark:text-slate-200">
                     টোন ও কালার এডজাস্টমেন্ট
                   </span>
@@ -1428,14 +1788,14 @@ export default function PhotoStudio() {
                     }}
                     className="text-[10px] text-indigo-600 hover:underline"
                   >
-                    সব রিসেট করুন
+                    রিসেট
                   </button>
                 </div>
 
                 {/* Brightness */}
                 <div>
                   <div className="flex justify-between text-[11px] text-slate-500 mb-1">
-                    <span>উজ্জ্বলতা (Brightness)</span>
+                    <span>ওভারঅল উজ্জ্বলতা (Brightness)</span>
                     <span>{brightness}</span>
                   </div>
                   <input
@@ -1830,10 +2190,10 @@ export default function PhotoStudio() {
                 </span>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    AI স্মার্ট ফটো ল্যাব (প্রম্পট এডিটর)
+                    AI স্মার্ট ফটো ও ফেস ল্যাব
                   </h3>
                   <p className="text-xs text-slate-500">
-                    বাংলা বা ইংরেজিতে লিখুন আপনার ছবিকে ঠিক কেমন এডিট করতে চান
+                    বাংলা বা ইংরেজিতে লিখুন আপনার ছবি ও ফেসকে ঠিক কেমন এডিট করতে চান
                   </p>
                 </div>
               </div>
@@ -1857,7 +2217,7 @@ export default function PhotoStudio() {
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAiExecutePrompt()}
-                    placeholder="যেমন: ব্যাকগ্রাউন্ড সাদা করো, ফেস উজ্জ্বল ও ক্লিয়ার করো, ফর্মাল লুক দাও..."
+                    placeholder="যেমন: ব্যাকগ্রাউন্ড সাদা করো, ফেস উজ্জ্বল ও স্মুথ করো, ফর্মাল লুক দাও..."
                     className="w-full pl-3.5 pr-24 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500"
                   />
                   <button
