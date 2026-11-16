@@ -63,6 +63,38 @@
     linear-gradient(-45deg, transparent 75%, #162033 75%);
 }
 
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(241, 245, 249, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+}
+
 /* Rich-text editor semantic resets inside multi-page Word sheets */
 .a4-editor-content {
   outline: none;
@@ -188,7 +220,7 @@
   outline-offset: -10mm;
 }
 
-/* Print rules for multi-page A4 / Letter / Legal Direct Print */
+/* Print rules for multi-page A4 / Letter / Legal & Passport Photo Sheets */
 @page {
   margin: 0;
 }
@@ -238,5 +270,23 @@
   .print-page-sheet:last-child {
     break-after: auto;
     page-break-after: auto;
+  }
+
+  /* Specific print class for Photo Studio Grid Printing */
+  .photo-sheet-print-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .photo-sheet-print-target {
+    box-shadow: none !important;
+    border: none !important;
+    margin: auto !important;
   }
 }
